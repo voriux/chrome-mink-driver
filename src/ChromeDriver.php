@@ -154,8 +154,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        $response = $this->send('Page.getNavigationHistory');
-        return str_replace($this->base_url, '', $response['entries'][$response['currentIndex']]['url']);
+        $url = $this->send('Runtime.evaluate', ['expression' => 'window.location.href'])['result']['value'];
+        return str_replace($this->base_url, '', $url);
     }
 
     /**
