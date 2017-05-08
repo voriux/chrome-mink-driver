@@ -380,7 +380,7 @@ class ChromeDriver extends CoreDriver
     public function getText($xpath)
     {
         $text = $this->getElementProperty($xpath, 'textContent')['value'];
-        $text = (string)str_replace(array("\r", "\r\n", "\n"), ' ', $text);
+        $text = trim(preg_replace('/\s+/', ' ', $text), ' ');
         return $text;
     }
 
