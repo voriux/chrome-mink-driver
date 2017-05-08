@@ -178,9 +178,8 @@ class ChromeDriver extends CoreDriver
      */
     public function forward()
     {
-        $current_index = $this->send('Page.getNavigationHistory')['currentIndex'];
-        $this->send('Page.navigateToHistoryEntry', $current_index + 1);
-        $this->waitForPage();
+        $this->send('Runtime.evaluate', ['expression' => 'window.history.forward()']);
+        $this->wait(5000, "document.readyState == 'complete'");
     }
 
     /**
@@ -191,9 +190,8 @@ class ChromeDriver extends CoreDriver
      */
     public function back()
     {
-        $current_index = $this->send('Page.getNavigationHistory')['currentIndex'];
-        $this->send('Page.navigateToHistoryEntry', $current_index - 1);
-        $this->waitForPage();
+        $this->send('Runtime.evaluate', ['expression' => 'window.history.back()']);
+        $this->wait(5000, "document.readyState == 'complete'");
     }
 
     /**
