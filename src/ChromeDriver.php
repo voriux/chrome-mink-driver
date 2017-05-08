@@ -31,6 +31,8 @@ class ChromeDriver extends CoreDriver
     private $node_ids_ready;
     /** @var string */
     private $base_url;
+    /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
+    private $response = null;
 
     /**
      * ChromeDriver constructor.
@@ -137,6 +139,7 @@ class ChromeDriver extends CoreDriver
      */
     public function visit($url)
     {
+        $this->response = null;
         $this->send('Page.navigate', ['url' => 'http://localhost' . $url]);
         $this->waitForPage();
     }
@@ -230,7 +233,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getResponseHeaders()
     {
-        throw new UnsupportedDriverActionException('Response headers are not available from %s', $this);
+        $this->waitForHttpResponse();
+        return $this->response['headers'];
     }
 
     /**
@@ -289,7 +293,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getStatusCode()
     {
-        throw new UnsupportedDriverActionException('Status code is not available from %s', $this);
+        $this->waitForHttpResponse();
+        return $this->response['status'];
     }
 
     /**
@@ -624,6 +629,16 @@ class ChromeDriver extends CoreDriver
 
             if (array_key_exists('method', $data)) {
                 switch ($data['method']) {
+                    case 'Network.requestWillBeSent':
+                        if ($data['params']['type'] == 'Document') {
+                            $this->response = null;
+                        }
+                        break;
+                    case 'Network.responseReceived':
+                        if ($data['params']['type'] == 'Document') {
+                            $this->response = $data['params']['response'];
+                        }
+                        break;
                     case 'Page.domContentEventFired':
                         $this->dom_ready = false;
                         break;
@@ -714,5 +729,14 @@ class ChromeDriver extends CoreDriver
             throw new ElementNotFoundException($this, null, $xpath);
         }
         return $result;
+    }
+
+    protected function waitForHttpResponse()
+    {
+        if (null === $this->response) {
+            $this->waitFor(function () {
+                return null !== $this->response;
+            });
+        }
     }
 }
