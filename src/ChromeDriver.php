@@ -709,6 +709,10 @@ class ChromeDriver extends CoreDriver
     protected function getElementProperty($xpath, $property)
     {
         $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().' . $property . '';
-        return $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
+            throw new ElementNotFoundException($this, null, $xpath);
+        }
+        return $result;
     }
 }
