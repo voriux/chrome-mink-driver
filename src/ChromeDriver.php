@@ -695,7 +695,13 @@ JS;
      */
     public function wait($timeout, $condition)
     {
-        throw new UnsupportedDriverActionException('JS is not supported by %s', $this);
+        $start = microtime(true);
+        $end = $start + $timeout / 1000.0;
+        do {
+            $result = $this->send('Runtime.evaluate', ['expression' => $condition])['result']['value'];
+            usleep(100000);
+        } while (microtime(true) < $end && !$result);
+        return (bool) $result;
     }
 
     /**
