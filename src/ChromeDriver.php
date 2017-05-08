@@ -367,9 +367,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getTagName($xpath)
     {
-        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().tagName';
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
-        return $result['value'];
+        return $this->getElementProperty($xpath, 'tagName')['value'];
     }
 
     /**
@@ -381,8 +379,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getText($xpath)
     {
-        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().textContent';
-        $text = $this->send('Runtime.evaluate', ['expression' => $expression])['result']['value'];
+        $text = $this->getElementProperty($xpath, 'textContent')['value'];
         $text = (string)str_replace(array("\r", "\r\n", "\n"), ' ', $text);
         return $text;
     }
@@ -392,9 +389,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getHtml($xpath)
     {
-        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().innerHTML';
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
-        return $result['value'];
+        return $this->getElementProperty($xpath, 'innerHTML')['value'];
     }
 
     /**
@@ -402,9 +397,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getOuterHtml($xpath)
     {
-        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().outerHTML';
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
-        return $result['value'];
+        return $this->getElementProperty($xpath, 'outerHTML')['value'];
     }
 
     /**
@@ -711,5 +704,11 @@ class ChromeDriver extends CoreDriver
         $xpath = addslashes($xpath);
         $xpath = str_replace("\n", '\\n', $xpath);
         return "var xpath_result = document.evaluate(\"{$xpath}\", document.body);";
+    }
+
+    protected function getElementProperty($xpath, $property)
+    {
+        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().' . $property . '';
+        return $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
     }
 }
