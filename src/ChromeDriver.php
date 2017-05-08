@@ -422,34 +422,34 @@ class ChromeDriver extends CoreDriver
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
         element = xpath_result.iterateNext();
-        var value = null
+    var value = null
 
-        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
-            value = element.checked ? element.value : null;
-        } else if (element.tagName == 'INPUT' && element.type == 'radio') {
-            var name = element.getAttribute('name');
-            if (name) {
-                var fields = window.document.getElementsByName(name),
-                    i, l = fields.length;
-                for (i = 0; i < l; i++) {
-                    var field = fields.item(i);
-                    if (field.form === element.form && field.checked) {
-                        value = field.value;
-                        break;
-                    }
+    if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+        value = element.checked ? element.value : null;
+    } else if (element.tagName == 'INPUT' && element.type == 'radio') {
+        var name = element.getAttribute('name');
+        if (name) {
+            var fields = window.document.getElementsByName(name),
+                i, l = fields.length;
+            for (i = 0; i < l; i++) {
+                var field = fields.item(i);
+                if (field.form === element.form && field.checked) {
+                    value = field.value;
+                    break;
                 }
             }
-        } else if (element.tagName == 'SELECT' && element.multiple) {
-            value = []
-            for (var i = 0; i < element.options.length; i++) {
-                if (element.options[i].selected) {
-                    value.push(element.options[i].value);
-                }
-            }
-        } else {
-            value = element.value;
         }
-        value
+    } else if (element.tagName == 'SELECT' && element.multiple) {
+        value = []
+        for (var i = 0; i < element.options.length; i++) {
+            if (element.options[i].selected) {
+                value.push(element.options[i].value);
+            }
+        }
+    } else {
+        value = element.value;
+    }
+    value
 JS;
 
         $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
@@ -478,7 +478,64 @@ JS;
      */
     public function setValue($xpath, $value)
     {
-        throw new UnsupportedDriverActionException('Setting the field value is not supported by %s', $this);
+        $expression = $this->getXpathExpression($xpath);
+        if (!ctype_digit($value)) {
+            $value = json_encode($value);
+        }
+        $expression .= <<<JS
+    var expected_value = $value;
+    var element = xpath_result.iterateNext();
+    var result = 0;
+    if (element == undefined) {
+        result = 1
+    } else {
+        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+            if (expected_value) {
+                if (!element.checked) {
+                    element.checked = true;
+                }
+            } else if (!element.checked) {
+                element.checked = false;
+            }
+        } else if (element.tagName == 'INPUT' && element.type == 'radio') {
+            var name = element.name
+            var fields = window.document.getElementsByName(name),
+                i, l = fields.length;
+            for (i = 0; i < l; i++) {
+                var field = fields.item(i);
+                if (field.value === expected_value) {
+                    field.checked = true;
+                } else {
+                    field.checked = false;
+                }
+            }
+        } else if (element.tagName == 'SELECT') {
+            for (var i = 0; i < element.options.length; i++) {
+                if (element.options[i].value === expected_value || (element.multiple && expected_value.includes(element.options[i].value))) {
+                    element.options[i].selected = true;
+                } else {
+                    element.options[i].selected = false;
+                }
+            }
+        } else if (element.tagName == 'INPUT' && element.type == 'file') {
+        } else {
+            element.value = expected_value;
+            element.dispatchEvent(new Event('keyup'))
+        }
+        element.dispatchEvent(new Event('change'))
+    }
+    result
+JS;
+
+        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+
+        if ($result['type'] === 'number') {
+            if ($result['value'] == 1) {
+                throw new ElementNotFoundException($this, null, $xpath);
+            }
+        } elseif ($result['type'] == 'error') {
+            throw new \Exception($result['description']);
+        }
     }
 
     /**
