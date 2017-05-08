@@ -418,7 +418,58 @@ class ChromeDriver extends CoreDriver
      */
     public function getValue($xpath)
     {
-        throw new UnsupportedDriverActionException('Getting the field value is not supported by %s', $this);
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+        element = xpath_result.iterateNext();
+        var value = null
+
+        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+            value = element.checked ? element.value : null;
+        } else if (element.tagName == 'INPUT' && element.type == 'radio') {
+            var name = element.getAttribute('name');
+            if (name) {
+                var fields = window.document.getElementsByName(name),
+                    i, l = fields.length;
+                for (i = 0; i < l; i++) {
+                    var field = fields.item(i);
+                    if (field.form === element.form && field.checked) {
+                        value = field.value;
+                        break;
+                    }
+                }
+            }
+        } else if (element.tagName == 'SELECT' && element.multiple) {
+            value = []
+            for (var i = 0; i < element.options.length; i++) {
+                if (element.options[i].selected) {
+                    value.push(element.options[i].value);
+                }
+            }
+        } else {
+            value = element.value;
+        }
+        value
+JS;
+
+        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+
+        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
+            throw new ElementNotFoundException($this, null, $xpath);
+        }
+
+        if ($result['type'] === 'object' && $result['objectId']) {
+            $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
+            $properties = $this->send('Runtime.getProperties', $parameters)['result'];
+            $return = [];
+            foreach ($properties as $property) {
+                if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
+                    $return[] = $property['value']['value'];
+                }
+            }
+            return $return;
+        }
+
+        return $result['value'];
     }
 
     /**
