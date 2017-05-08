@@ -1,0 +1,31 @@
+{
+    "name": "dmore/chrome-headless-mink-driver",
+    "description": "Mink driver for controlling headless chrome without selenium",
+    "type": "library",
+    "license": "BSD",
+    "authors": [
+        {
+            "name": "Dorian More",
+            "email": "d.more@gmail.com"
+        }
+    ],
+    "autoload": {
+        "psr-4": {
+            "DMore\\ChromeDriver\\": "src/"
+        }
+    },
+
+    "autoload-dev": {
+        "psr-4": {
+            "DMore\\ChromeDriverTests\\": "tests/"
+        }
+    },
+    "minimum-stability": "stable",
+    "require-dev": {
+        "phpunit/phpunit": "^5.0.0"
+    },
+    "require": {
+        "textalk/websocket": "^1.2.0",
+        "behat/mink": "1.*"
+    }
+}
