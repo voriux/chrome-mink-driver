@@ -222,7 +222,7 @@ class ChromeDriver extends CoreDriver
      */
     public function setRequestHeader($name, $value)
     {
-        throw new UnsupportedDriverActionException('Request headers manipulation is not supported by %s', $this);
+        $this->send('Network.setExtraHTTPHeaders', ['headers' => [$name => $value]]);
     }
 
     /**
