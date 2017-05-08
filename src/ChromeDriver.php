@@ -672,8 +672,6 @@ JS;
             if (is_null($response)) {
                 return null;
             }
-//            echo $response . PHP_EOL;
-
             $data = json_decode($response, true);
             if (array_key_exists('error', $data)) {
                 throw new DriverException($data['error']['message'], $data['error']['code']);
@@ -712,7 +710,6 @@ JS;
                         $this->node_ids_ready = true;
                         break;
                     default:
-//                        echo "Unknown method {$data['method']}";
                         continue;
                 }
             }
