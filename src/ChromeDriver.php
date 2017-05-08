@@ -410,7 +410,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getAttribute($xpath, $name)
     {
-        throw new UnsupportedDriverActionException('Getting the element attribute is not supported by %s', $this);
+        $name = addslashes($name);
+        return $this->getElementProperty($xpath, "getAttribute('{$name}');")['value'];
     }
 
     /**
