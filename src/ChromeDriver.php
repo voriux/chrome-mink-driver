@@ -575,7 +575,14 @@ JS;
      */
     public function click($xpath)
     {
-        throw new UnsupportedDriverActionException('Clicking on an element is not supported by %s', $this);
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext()
+    element.click();
+JS;
+
+        $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        $this->wait(5000, "document.readyState == 'complete'");
     }
 
     /**
