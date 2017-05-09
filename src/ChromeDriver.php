@@ -528,6 +528,7 @@ JS;
      */
     public function check($xpath)
     {
+        $this->expectCheckbox($xpath);
         $this->setValue($xpath, true);
     }
 
@@ -536,6 +537,7 @@ JS;
      */
     public function uncheck($xpath)
     {
+        $this->expectCheckbox($xpath);
         $this->setValue($xpath, false);
     }
 
@@ -552,7 +554,11 @@ JS;
      */
     public function selectOption($xpath, $value, $multiple = false)
     {
-        throw new UnsupportedDriverActionException('Selecting an option is not supported by %s', $this);
+        $this->expectSelect($xpath);
+        if ($multiple) {
+            $value = array_merge((array) $value, $this->getValue($xpath));
+        }
+        return $this->setValue($xpath, $value);
     }
 
     /**
@@ -563,10 +569,16 @@ JS;
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
     var element = xpath_result.iterateNext()
-    element.click();
+    if (element) {
+        element.click();
+    }
+    element != null
 JS;
 
-        $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        $result = $this->evaluateScript($expression);
+        if (!$result) {
+            throw new ElementNotFoundException($this, null, $xpath);
+        }
         $this->wait(5000, "document.readyState == 'complete'");
     }
 
@@ -869,6 +881,38 @@ JS;
             $this->waitFor(function () {
                 return null !== $this->response;
             });
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @throws ElementNotFoundException
+     */
+    protected function expectSelect($xpath)
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext();
+    element.tagName == 'SELECT'
+JS;
+        if (!$this->evaluateScript($expression)) {
+            throw new ElementNotFoundException($this, 'select', $xpath);
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @throws ElementNotFoundException
+     */
+    protected function expectCheckbox($xpath)
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext();
+    element.tagName == 'INPUT' && element.type == 'checkbox'
+JS;
+        if (!$this->evaluateScript($expression)) {
+            throw new ElementNotFoundException($this, 'checkbox', $xpath);
         }
     }
 }
