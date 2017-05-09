@@ -672,7 +672,7 @@ JS;
      */
     public function executeScript($script)
     {
-        $this->send('Runtime.evaluate', ['expression' => $script])['result'];
+        $this->evaluateScript($script);
     }
 
     /**
@@ -680,19 +680,19 @@ JS;
      */
     public function evaluateScript($script)
     {
-        # TODO: Return could exist anywhere in the script
-        # Consider wrapping everything into a function to allow returns
-        if (substr($script, 0, 7) === 'return ') {
-            $script = substr($script, 7);
-        }
-
         if (substr($script, 0, 8) === 'function') {
             $script = '(' . $script . ')';
+            if (substr($script, -2) == ';)') {
+                $script = substr($script, 0, -2) . ')';
+            }
         }
 
         $result = $this->send('Runtime.evaluate', ['expression' => $script])['result'];
 
         if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
+            if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
+                return $this->evaluateScript('(function() {' . $script . '}());');
+            }
             throw new \Exception($result['description']);
         }
 
