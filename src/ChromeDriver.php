@@ -475,15 +475,7 @@ JS;
     if (element == undefined) {
         result = 1
     } else {
-        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
-            if (expected_value) {
-                if (!element.checked) {
-                    element.checked = true;
-                }
-            } else if (!element.checked) {
-                element.checked = false;
-            }
-        } else if (element.tagName == 'INPUT' && element.type == 'radio') {
+        if (element.tagName == 'INPUT' && element.type == 'radio') {
             var name = element.name
             var fields = window.document.getElementsByName(name),
                 i, l = fields.length;
@@ -529,7 +521,7 @@ JS;
      */
     public function check($xpath)
     {
-        throw new UnsupportedDriverActionException('Checking a checkbox is not supported by %s', $this);
+        $this->setCheckboxValue($xpath, true);
     }
 
     /**
@@ -537,7 +529,7 @@ JS;
      */
     public function uncheck($xpath)
     {
-        throw new UnsupportedDriverActionException('Unchecking a checkbox is not supported by %s', $this);
+        $this->setCheckboxValue($xpath, false);
     }
 
     /**
@@ -545,7 +537,7 @@ JS;
      */
     public function isChecked($xpath)
     {
-        throw new UnsupportedDriverActionException('Getting the state of a checkbox is not supported by %s', $this);
+        return $this->getElementProperty($xpath, 'checked')['value'];
     }
 
     /**
@@ -870,6 +862,35 @@ JS;
             $this->waitFor(function () {
                 return null !== $this->response;
             });
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @param $expected_value
+     * @throws ElementNotFoundException
+     */
+    protected function setCheckboxValue(string $xpath, bool $expected_value)
+    {
+        $js_value = $expected_value ? 'true' : 'false';
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+        element = xpath_result.iterateNext();
+        var expected_value = $js_value;
+        var result = 0;
+        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+            element.checked = expected_value;
+            element.dispatchEvent(new Event('change'))
+        } else {
+            result = 1
+        }
+        result
+JS;
+
+        $result = $this->evaluateScript($expression);
+
+        if ($result !== 0) {
+            throw new ElementNotFoundException($this, 'checkbox', $xpath);
         }
     }
 }
