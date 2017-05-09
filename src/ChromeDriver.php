@@ -481,15 +481,22 @@ JS;
                 i, l = fields.length;
             for (i = 0; i < l; i++) {
                 var field = fields.item(i);
-                if (field.value === expected_value) {
-                    field.checked = true;
-                } else {
-                    field.checked = false;
+                if (field.form === element.form) {
+                    if (field.value === expected_value) {
+                        field.checked = true;
+                    } else {
+                        field.checked = false;
+                    }
                 }
             }
+        } else if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+            element.checked = expected_value;
         } else if (element.tagName == 'SELECT') {
+            if (element.multiple && typeof expected_value != 'object') {
+                expected_value = [expected_value]
+            }
             for (var i = 0; i < element.options.length; i++) {
-                if (element.options[i].value === expected_value || (element.multiple && expected_value.includes(element.options[i].value))) {
+                if ((element.multiple && expected_value.includes(element.options[i].value)) || element.options[i].value == expected_value) {
                     element.options[i].selected = true;
                 } else {
                     element.options[i].selected = false;
@@ -521,7 +528,7 @@ JS;
      */
     public function check($xpath)
     {
-        $this->setCheckboxValue($xpath, true);
+        $this->setValue($xpath, true);
     }
 
     /**
@@ -529,7 +536,7 @@ JS;
      */
     public function uncheck($xpath)
     {
-        $this->setCheckboxValue($xpath, false);
+        $this->setValue($xpath, false);
     }
 
     /**
@@ -862,35 +869,6 @@ JS;
             $this->waitFor(function () {
                 return null !== $this->response;
             });
-        }
-    }
-
-    /**
-     * @param $xpath
-     * @param $expected_value
-     * @throws ElementNotFoundException
-     */
-    protected function setCheckboxValue(string $xpath, bool $expected_value)
-    {
-        $js_value = $expected_value ? 'true' : 'false';
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-        element = xpath_result.iterateNext();
-        var expected_value = $js_value;
-        var result = 0;
-        if (element.tagName == 'INPUT' && element.type == 'checkbox') {
-            element.checked = expected_value;
-            element.dispatchEvent(new Event('change'))
-        } else {
-            result = 1
-        }
-        result
-JS;
-
-        $result = $this->evaluateScript($expression);
-
-        if ($result !== 0) {
-            throw new ElementNotFoundException($this, 'checkbox', $xpath);
         }
     }
 }
