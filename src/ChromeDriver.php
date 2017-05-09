@@ -472,7 +472,7 @@ JS;
     var expected_value = $value;
     var element = xpath_result.iterateNext();
     var result = 0;
-    if (element == undefined) {
+    if (!element) {
         result = 1
     } else {
         if (element.tagName == 'INPUT' && element.type == 'radio') {
@@ -554,7 +554,7 @@ JS;
      */
     public function selectOption($xpath, $value, $multiple = false)
     {
-        $this->expectSelect($xpath);
+        $this->expectSelectOrRadio($xpath);
         if ($multiple) {
             $value = array_merge((array) $value, $this->getValue($xpath));
         }
@@ -888,12 +888,12 @@ JS;
      * @param $xpath
      * @throws ElementNotFoundException
      */
-    protected function expectSelect($xpath)
+    protected function expectSelectOrRadio($xpath)
     {
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
     var element = xpath_result.iterateNext();
-    element.tagName == 'SELECT'
+    element.tagName == 'SELECT' || (element.tagName == 'INPUT' && element.type == 'radio')
 JS;
         if (!$this->evaluateScript($expression)) {
             throw new ElementNotFoundException($this, 'select', $xpath);
