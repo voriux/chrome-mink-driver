@@ -450,25 +450,13 @@ class ChromeDriver extends CoreDriver
     value
 JS;
 
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
-
-        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
-            throw new ElementNotFoundException($this, null, $xpath);
+        try {
+            return $this->evaluateScript($expression);
+        } catch (DriverException $exception) {
+            # TODO: Don't assume it's always ElementNotFound. Get the script to throw something we can recognize
+            # on php's side as NotFoundException
+            throw new ElementNotFoundException($this);
         }
-
-        if ($result['type'] === 'object' && $result['objectId']) {
-            $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
-            $properties = $this->send('Runtime.getProperties', $parameters)['result'];
-            $return = [];
-            foreach ($properties as $property) {
-                if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
-                    $return[] = $property['value']['value'];
-                }
-            }
-            return $return;
-        }
-
-        return $result['value'];
     }
 
     /**
@@ -684,7 +672,7 @@ JS;
      */
     public function executeScript($script)
     {
-        throw new UnsupportedDriverActionException('JS is not supported by %s', $this);
+        $this->send('Runtime.evaluate', ['expression' => $script])['result'];
     }
 
     /**
@@ -692,7 +680,35 @@ JS;
      */
     public function evaluateScript($script)
     {
-        throw new UnsupportedDriverActionException('JS is not supported by %s', $this);
+        # TODO: Return could exist anywhere in the script
+        # Consider wrapping everything into a function to allow returns
+        if (substr($script, 0, 7) === 'return ') {
+            $script = substr($script, 7);
+        }
+
+        if (substr($script, 0, 8) === 'function') {
+            $script = '(' . $script . ')';
+        }
+
+        $result = $this->send('Runtime.evaluate', ['expression' => $script])['result'];
+
+        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
+            throw new \Exception($result['description']);
+        }
+
+        if ($result['type'] === 'object' && $result['objectId']) {
+            $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
+            $properties = $this->send('Runtime.getProperties', $parameters)['result'];
+            $return = [];
+            foreach ($properties as $property) {
+                if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
+                    $return[] = $property['value']['value'];
+                }
+            }
+            return $return;
+        }
+
+        return $result['value'];
     }
 
     /**
@@ -703,10 +719,10 @@ JS;
         $start = microtime(true);
         $end = $start + $timeout / 1000.0;
         do {
-            $result = $this->send('Runtime.evaluate', ['expression' => $condition])['result']['value'];
+            $result = $this->evaluateScript($condition);
             usleep(100000);
         } while (microtime(true) < $end && !$result);
-        return (bool) $result;
+        return (bool)$result;
     }
 
     /**
