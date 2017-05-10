@@ -725,7 +725,7 @@ JS;
      */
     public function resizeWindow($width, $height, $name = null)
     {
-        throw new UnsupportedDriverActionException('Window resizing is not supported by %s', $this);
+        $this->executeScript("window.innerWidth = $width;window.innerHeight = $height;");
     }
 
     /**
@@ -733,7 +733,7 @@ JS;
      */
     public function maximizeWindow($name = null)
     {
-        throw new UnsupportedDriverActionException('Window maximize is not supported by %s', $this);
+        $this->executeScript("window.innerWidth = screen.width;window.innerHeight = screen.height;");
     }
 
     /**
