@@ -741,7 +741,7 @@ JS;
      */
     public function submitForm($xpath)
     {
-        throw new UnsupportedDriverActionException('Form submission is not supported by %s', $this);
+        $this->runScriptOnXpathElement($xpath, 'element.submit()');
     }
 
     private function waitFor(callable $is_ready)
