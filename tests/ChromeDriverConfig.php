@@ -17,7 +17,7 @@ class ChromeDriverConfig extends AbstractConfig
      */
     public function createDriver()
     {
-        return new ChromeDriver();
+        return new ChromeDriver($_SERVER['CHROME_URL']);
     }
 
     /**

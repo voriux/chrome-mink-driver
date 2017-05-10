@@ -9,6 +9,8 @@
     </testsuites>
 
     <php>
+        <server name="WEB_FIXTURES_HOST" value="http://localhost/" />
+        <server name="CHROME_URL" value="http://localhost:9222" />
         <var name="driver_config_factory" value="DMore\ChromeDriverTests\ChromeDriverConfig::getInstance" />
     </php>
 
