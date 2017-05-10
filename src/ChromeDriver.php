@@ -564,6 +564,7 @@ JS;
      */
     public function click($xpath)
     {
+        $this->mouseOver($xpath);
         $this->triggerMouseEvent($xpath, 'click');
         $this->wait(5000, "document.readyState == 'complete'");
     }
@@ -581,6 +582,7 @@ JS;
      */
     public function doubleClick($xpath)
     {
+        $this->mouseOver($xpath);
         $this->triggerMouseEvent($xpath, 'dblclick');
     }
 
@@ -589,6 +591,7 @@ JS;
      */
     public function rightClick($xpath)
     {
+        $this->mouseOver($xpath);
         $this->triggerEvent($xpath, 'contextmenu');
     }
 
