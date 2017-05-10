@@ -601,16 +601,7 @@ JS;
      */
     public function mouseOver($xpath)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext();
-    rect = element.getBoundingClientRect();
-    [rect.left, rect.top, rect.width, rect.height]
-JS;
-
-        list($left, $top, $width, $height) = $this->evaluateScript($expression);
-        $left = round($left + $width / 2);
-        $top = round($top + $height / 2);
+        list($left, $top) = $this->getCoordinatesForXpath($xpath);
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
     }
 
@@ -659,7 +650,15 @@ JS;
      */
     public function dragTo($sourceXpath, $destinationXpath)
     {
-        throw new UnsupportedDriverActionException('Mouse manipulations are not supported by %s', $this);
+        list($left, $top) = $this->getCoordinatesForXpath($sourceXpath);
+        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
+        $parameters = ['type' => 'mousePressed', 'x' => $left, 'y' => $top, 'button' => 'left'];
+        $this->send('Input.dispatchMouseEvent', $parameters);
+
+        list($left, $top) = $this->getCoordinatesForXpath($destinationXpath);
+        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
+        $parameters = ['type' => 'mouseReleased', 'x' => $left, 'y' => $top, 'button' => 'left'];
+        $this->send('Input.dispatchMouseEvent', $parameters);
     }
 
     /**
@@ -992,5 +991,24 @@ JS;
             throw $exception;
         }
         return $result;
+    }
+
+    /**
+     * @param $xpath
+     * @return array
+     */
+    protected function getCoordinatesForXpath($xpath):array
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext();
+    rect = element.getBoundingClientRect();
+    [rect.left, rect.top, rect.width, rect.height]
+JS;
+
+        list($left, $top, $width, $height) = $this->evaluateScript($expression);
+        $left = round($left + $width / 2);
+        $top = round($top + $height / 2);
+        return array($left, $top);
     }
 }
