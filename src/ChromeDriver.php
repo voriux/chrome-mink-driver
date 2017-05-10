@@ -585,7 +585,7 @@ JS;
      */
     public function isVisible($xpath)
     {
-        throw new UnsupportedDriverActionException('Element visibility check is not supported by %s', $this);
+        return $this->runScriptOnXpathElement($xpath, 'window.getComputedStyle(element).display !== "none"');
     }
 
     /**
