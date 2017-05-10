@@ -566,19 +566,7 @@ JS;
      */
     public function click($xpath)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext()
-    if (element) {
-        element.click();
-    }
-    element != null
-JS;
-
-        $result = $this->evaluateScript($expression);
-        if (!$result) {
-            throw new ElementNotFoundException($this, null, $xpath);
-        }
+        $this->triggerMouseEvent($xpath, 'click');
         $this->wait(5000, "document.readyState == 'complete'");
     }
 
@@ -595,7 +583,7 @@ JS;
      */
     public function doubleClick($xpath)
     {
-        throw new UnsupportedDriverActionException('Double-clicking is not supported by %s', $this);
+        $this->triggerMouseEvent($xpath, 'dblclick');
     }
 
     /**
@@ -603,7 +591,7 @@ JS;
      */
     public function rightClick($xpath)
     {
-        throw new UnsupportedDriverActionException('Right-clicking is not supported by %s', $this);
+        $this->triggerEvent($xpath, 'contextmenu');
     }
 
     /**
@@ -627,7 +615,7 @@ JS;
      */
     public function mouseOver($xpath)
     {
-        throw new UnsupportedDriverActionException('Mouse manipulations are not supported by %s', $this);
+        $this->triggerMouseEvent($xpath, 'mouseover');
     }
 
     /**
@@ -635,7 +623,7 @@ JS;
      */
     public function focus($xpath)
     {
-        throw new UnsupportedDriverActionException('Mouse manipulations are not supported by %s', $this);
+        $this->triggerEvent($xpath, 'focus');
     }
 
     /**
@@ -643,7 +631,7 @@ JS;
      */
     public function blur($xpath)
     {
-        throw new UnsupportedDriverActionException('Mouse manipulations are not supported by %s', $this);
+        $this->triggerEvent($xpath, 'blur');
     }
 
     /**
@@ -651,7 +639,7 @@ JS;
      */
     public function keyPress($xpath, $char, $modifier = null)
     {
-        throw new UnsupportedDriverActionException('Keyboard manipulations are not supported by %s', $this);
+        $this->triggerKeyboardEvent($xpath, $char, $modifier, 'keypress');
     }
 
     /**
@@ -659,7 +647,7 @@ JS;
      */
     public function keyDown($xpath, $char, $modifier = null)
     {
-        throw new UnsupportedDriverActionException('Keyboard manipulations are not supported by %s', $this);
+        $this->triggerKeyboardEvent($xpath, $char, $modifier, 'keydown');
     }
 
     /**
@@ -667,7 +655,7 @@ JS;
      */
     public function keyUp($xpath, $char, $modifier = null)
     {
-        throw new UnsupportedDriverActionException('Keyboard manipulations are not supported by %s', $this);
+        $this->triggerKeyboardEvent($xpath, $char, $modifier, 'keyup');
     }
 
     /**
@@ -913,6 +901,97 @@ JS;
 JS;
         if (!$this->evaluateScript($expression)) {
             throw new ElementNotFoundException($this, 'checkbox', $xpath);
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @param $event
+     * @throws ElementNotFoundException
+     */
+    protected function triggerMouseEvent($xpath, $event)
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext()
+    if (element) {
+        element.dispatchEvent(new MouseEvent('$event'));
+    }
+    element != null
+JS;
+
+        $result = $this->evaluateScript($expression);
+        if (!$result) {
+            throw new ElementNotFoundException($this, null, $xpath);
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @param $event
+     * @throws ElementNotFoundException
+     */
+    protected function triggerEvent($xpath, $event)
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext()
+    if (element) {
+        element.dispatchEvent(new Event('$event'));
+    }
+    element != null
+JS;
+
+        $result = $this->evaluateScript($expression);
+        if (!$result) {
+            throw new ElementNotFoundException($this, null, $xpath);
+        }
+    }
+
+    /**
+     * @param $xpath
+     * @param $char
+     * @param $modifier
+     * @param $event
+     * @throws ElementNotFoundException
+     */
+    protected function triggerKeyboardEvent($xpath, $char, $modifier, $event)
+    {
+        if (is_string($char)) {
+            $char = ord($char);
+        }
+        $options = [
+            'ctrlKey' => $modifier == 'ctrl' ? 'true' : 'false',
+            'altKey' => $modifier == 'alt' ? 'true' : 'false',
+            'shiftKey' => $modifier == 'shift' ? 'true' : 'false',
+            'metaKey' => $modifier == 'meta' ? 'true' : 'false',
+        ];
+
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var opts = $options;
+    var element = xpath_result.iterateNext();
+    if (element) {
+        element.focus();
+        var event = document.createEvent("Events");
+        event.initEvent("$event", true, true);
+        event.key = $char;
+        event.keyCode = $char;
+        event.which = $char;
+        event.ctrlKey = {$options['ctrlKey']};
+        event.shiftKey = {$options['shiftKey']};
+        event.altKey = {$options['altKey']};
+        event.metaKey = {$options['metaKey']};
+
+        element.dispatchEvent(event);
+    }
+    element != null;
+JS;
+
+
+        $result = $this->evaluateScript($expression);
+        if (!$result) {
+            throw new ElementNotFoundException($this, null, $xpath);
         }
     }
 }
