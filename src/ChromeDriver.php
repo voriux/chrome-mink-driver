@@ -554,7 +554,7 @@ JS;
     {
         $this->expectSelectOrRadio($xpath);
         if ($multiple) {
-            $value = array_merge((array) $value, $this->getValue($xpath));
+            $value = array_merge((array)$value, $this->getValue($xpath));
         }
         return $this->setValue($xpath, $value);
     }
