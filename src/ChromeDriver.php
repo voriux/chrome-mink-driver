@@ -305,9 +305,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getContent()
     {
-        $frame = $this->send('Page.getResourceTree')['frameTree']['frame'];
-        $parameters = ['frameId' => $frame['id'], 'url' => $frame['url']];
-        return $this->send('Page.getResourceContent', $parameters)['content'];
+        return $this->getElementProperty('//body', 'textContent')['value'];
     }
 
     /**
