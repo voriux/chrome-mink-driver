@@ -134,7 +134,6 @@ class ChromeDriver extends CoreDriver
      *
      * @param string $url url of the page
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function visit($url)
@@ -149,7 +148,6 @@ class ChromeDriver extends CoreDriver
      *
      * @return string
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function getCurrentUrl()
@@ -161,7 +159,6 @@ class ChromeDriver extends CoreDriver
     /**
      * Reloads current page.
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function reload()
@@ -173,7 +170,6 @@ class ChromeDriver extends CoreDriver
     /**
      * Moves browser forward 1 page.
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function forward()
@@ -185,7 +181,6 @@ class ChromeDriver extends CoreDriver
     /**
      * Moves browser backward 1 page.
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function back()
@@ -241,7 +236,6 @@ class ChromeDriver extends CoreDriver
      * @param string $name
      * @param string $value
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function setCookie($name, $value = null)
@@ -271,7 +265,6 @@ class ChromeDriver extends CoreDriver
      *
      * @return string|null
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function getCookie($name)
@@ -300,7 +293,6 @@ class ChromeDriver extends CoreDriver
      *
      * @return string
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function getContent()
@@ -314,7 +306,6 @@ class ChromeDriver extends CoreDriver
      * @return string screenshot of MIME type image/* depending
      *                on driver (e.g., image/png, image/jpeg)
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function getScreenshot()
