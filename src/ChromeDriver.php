@@ -297,7 +297,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getContent()
     {
-        return $this->getElementProperty('//body', 'textContent')['value'];
+        return $this->getElementProperty('//body', 'textContent');
     }
 
     /**
@@ -359,7 +359,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getTagName($xpath)
     {
-        return $this->getElementProperty($xpath, 'tagName')['value'];
+        return $this->getElementProperty($xpath, 'tagName');
     }
 
     /**
@@ -371,7 +371,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getText($xpath)
     {
-        $text = $this->getElementProperty($xpath, 'textContent')['value'];
+        $text = $this->getElementProperty($xpath, 'textContent');
         $text = trim(preg_replace('/\s+/', ' ', $text), ' ');
         return $text;
     }
@@ -381,7 +381,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getHtml($xpath)
     {
-        return $this->getElementProperty($xpath, 'innerHTML')['value'];
+        return $this->getElementProperty($xpath, 'innerHTML');
     }
 
     /**
@@ -389,7 +389,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getOuterHtml($xpath)
     {
-        return $this->getElementProperty($xpath, 'outerHTML')['value'];
+        return $this->getElementProperty($xpath, 'outerHTML');
     }
 
     /**
@@ -398,7 +398,7 @@ class ChromeDriver extends CoreDriver
     public function getAttribute($xpath, $name)
     {
         $name = addslashes($name);
-        return $this->getElementProperty($xpath, "getAttribute('{$name}');")['value'];
+        return $this->getElementProperty($xpath, "getAttribute('{$name}');");
     }
 
     /**
@@ -439,13 +439,7 @@ class ChromeDriver extends CoreDriver
     value
 JS;
 
-        try {
-            return $this->evaluateScript($expression);
-        } catch (DriverException $exception) {
-            # TODO: Don't assume it's always ElementNotFound. Get the script to throw something we can recognize
-            # on php's side as NotFoundException
-            throw new ElementNotFoundException($this);
-        }
+        return $this->evaluateScript($expression);
     }
 
     /**
@@ -535,7 +529,7 @@ JS;
      */
     public function isChecked($xpath)
     {
-        return $this->getElementProperty($xpath, 'checked')['value'];
+        return $this->getElementProperty($xpath, 'checked');
     }
 
     /**
@@ -857,12 +851,7 @@ JS;
 
     protected function getElementProperty($xpath, $property)
     {
-        $expression = $this->getXpathExpression($xpath) . ' xpath_result.iterateNext().' . $property . '';
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
-        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
-            throw new ElementNotFoundException($this, null, $xpath);
-        }
-        return $result;
+        return $this->runScriptOnXpathElement($xpath, 'element.' . $property);
     }
 
     protected function waitForHttpResponse()
@@ -880,13 +869,11 @@ JS;
      */
     protected function expectSelectOrRadio($xpath)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext();
+        $script = <<<JS
     element.tagName == 'SELECT' || (element.tagName == 'INPUT' && element.type == 'radio')
 JS;
-        if (!$this->evaluateScript($expression)) {
-            throw new ElementNotFoundException($this, 'select', $xpath);
+        if (!$this->runScriptOnXpathElement($xpath, $script)) {
+            throw new ElementNotFoundException($this, 'checkbox', $xpath);
         }
     }
 
@@ -896,12 +883,10 @@ JS;
      */
     protected function expectCheckbox($xpath)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext();
+        $script = <<<JS
     element.tagName == 'INPUT' && element.type == 'checkbox'
 JS;
-        if (!$this->evaluateScript($expression)) {
+        if (!$this->runScriptOnXpathElement($xpath, $script)) {
             throw new ElementNotFoundException($this, 'checkbox', $xpath);
         }
     }
@@ -913,19 +898,14 @@ JS;
      */
     protected function triggerMouseEvent($xpath, $event)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext()
+        $script = <<<JS
     if (element) {
         element.dispatchEvent(new MouseEvent('$event'));
     }
     element != null
 JS;
 
-        $result = $this->evaluateScript($expression);
-        if (!$result) {
-            throw new ElementNotFoundException($this, null, $xpath);
-        }
+        $this->runScriptOnXpathElement($xpath, $script);
     }
 
     /**
@@ -935,19 +915,14 @@ JS;
      */
     protected function triggerEvent($xpath, $event)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
-    var element = xpath_result.iterateNext()
+        $script = <<<JS
     if (element) {
         element.dispatchEvent(new Event('$event'));
     }
     element != null
 JS;
 
-        $result = $this->evaluateScript($expression);
-        if (!$result) {
-            throw new ElementNotFoundException($this, null, $xpath);
-        }
+        $this->runScriptOnXpathElement($xpath, $script);
     }
 
     /**
@@ -969,10 +944,8 @@ JS;
             'metaKey' => $modifier == 'meta' ? 'true' : 'false',
         ];
 
-        $expression = $this->getXpathExpression($xpath);
-        $expression .= <<<JS
+        $script = <<<JS
     var opts = $options;
-    var element = xpath_result.iterateNext();
     if (element) {
         element.focus();
         var event = document.createEvent("Events");
@@ -990,10 +963,34 @@ JS;
     element != null;
 JS;
 
+        $this->runScriptOnXpathElement($xpath, $script);
+    }
 
-        $result = $this->evaluateScript($expression);
-        if (!$result) {
-            throw new ElementNotFoundException($this, null, $xpath);
+    /**
+     * @param $xpath
+     * @param $script
+     * @return array
+     * @throws ElementNotFoundException
+     * @throws \Exception
+     */
+    protected function runScriptOnXpathElement($xpath, $script)
+    {
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext();
+    if (null == element) {
+        throw new Error("Element not found");
+    }
+JS;
+        $expression .= $script;
+        try {
+            $result = $this->evaluateScript($expression);
+        } catch (\Exception $exception) {
+            if (strpos($exception->getMessage(), 'Element not found') !== false) {
+                throw new ElementNotFoundException($this, null, $xpath);
+            }
+            throw $exception;
         }
+        return $result;
     }
 }
