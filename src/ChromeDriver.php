@@ -613,7 +613,15 @@ JS;
      */
     public function mouseOver($xpath)
     {
-        $this->triggerMouseEvent($xpath, 'mouseover');
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    var element = xpath_result.iterateNext();
+    rect = element.getBoundingClientRect();
+    [rect.left, rect.top]
+JS;
+
+        list($x_coordinate, $y_coordinate) = $this->evaluateScript($expression);
+        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $x_coordinate, 'y' => $y_coordinate]);
     }
 
     /**
