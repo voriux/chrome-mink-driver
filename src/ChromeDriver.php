@@ -29,20 +29,16 @@ class ChromeDriver extends CoreDriver
     private $page_ready;
     /** @var bool */
     private $node_ids_ready;
-    /** @var string */
-    private $base_url;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
 
     /**
      * ChromeDriver constructor.
      * @param string $chrome_url
-     * @param string $base_url
      * @param HttpClient $http_client
      */
     public function __construct(
         $chrome_url = 'http://localhost:9222',
-        $base_url = 'http://localhost',
         HttpClient $http_client = null
     ) {
         if ($http_client == null) {
@@ -50,7 +46,6 @@ class ChromeDriver extends CoreDriver
         }
         $this->http_client = $http_client;
         $this->url = $chrome_url;
-        $this->base_url = $base_url;
     }
 
     public function start()
@@ -139,7 +134,7 @@ class ChromeDriver extends CoreDriver
     public function visit($url)
     {
         $this->response = null;
-        $this->send('Page.navigate', ['url' => 'http://localhost' . $url]);
+        $this->send('Page.navigate', ['url' => $url]);
         $this->waitForPage();
     }
 
@@ -152,8 +147,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        $url = $this->send('Runtime.evaluate', ['expression' => 'window.location.href'])['result']['value'];
-        return str_replace($this->base_url, '', $url);
+        return $this->send('Runtime.evaluate', ['expression' => 'window.location.href'])['result']['value'];
     }
 
     /**
