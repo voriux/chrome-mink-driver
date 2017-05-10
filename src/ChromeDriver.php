@@ -620,11 +620,13 @@ JS;
         $expression .= <<<JS
     var element = xpath_result.iterateNext();
     rect = element.getBoundingClientRect();
-    [rect.left, rect.top]
+    [rect.left, rect.top, rect.width, rect.height]
 JS;
 
-        list($x_coordinate, $y_coordinate) = $this->evaluateScript($expression);
-        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $x_coordinate, 'y' => $y_coordinate]);
+        list($left, $top, $width, $height) = $this->evaluateScript($expression);
+        $left = round($left + $width / 2);
+        $top = round($top + $height / 2);
+        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
     }
 
     /**
