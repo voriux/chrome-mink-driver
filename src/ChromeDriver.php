@@ -593,7 +593,7 @@ JS;
      */
     public function isSelected($xpath)
     {
-        throw new UnsupportedDriverActionException('Element selection check is not supported by %s', $this);
+        return $this->runScriptOnXpathElement($xpath, '!!element.selected');
     }
 
     /**
