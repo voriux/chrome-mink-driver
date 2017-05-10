@@ -14,7 +14,7 @@ class ChromeDriver extends CoreDriver
     /** @var Client */
     private $client;
     /** @var string */
-    private $url;
+    private $api_url;
     /** @var string */
     private $id;
     /** @var int */
@@ -32,23 +32,21 @@ class ChromeDriver extends CoreDriver
 
     /**
      * ChromeDriver constructor.
-     * @param string $chrome_url
+     * @param string $api_url
      * @param HttpClient $http_client
      */
-    public function __construct(
-        $chrome_url = 'http://localhost:9222',
-        HttpClient $http_client = null
-    ) {
+    public function __construct($api_url = 'http://localhost:9222', HttpClient $http_client = null)
+    {
         if ($http_client == null) {
             $http_client = new HttpClient();
         }
         $this->http_client = $http_client;
-        $this->url = $chrome_url;
+        $this->api_url = $api_url;
     }
 
     public function start()
     {
-        $json = $this->http_client->get($this->url . '/json/new');
+        $json = $this->http_client->get($this->api_url . '/json/new');
         $response = json_decode($json, true);
         $ws_url = $response['webSocketDebuggerUrl'];
         $this->id = $response['id'];
@@ -91,7 +89,7 @@ class ChromeDriver extends CoreDriver
             $this->client->close();
         } catch (\WebSocket\ConnectionException $exception) {
         }
-        $this->http_client->get($this->url . '/json/close/' . $this->id);
+        $this->http_client->get($this->api_url . '/json/close/' . $this->id);
         $this->is_started = false;
     }
 
