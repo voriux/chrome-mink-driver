@@ -133,6 +133,7 @@ class ChromeDriver extends CoreDriver
     {
         $this->response = null;
         $this->send('Page.navigate', ['url' => $url]);
+        $this->page_ready = false;
         $this->waitForPage();
     }
 
@@ -156,6 +157,7 @@ class ChromeDriver extends CoreDriver
     public function reload()
     {
         $this->send('Page.reload');
+        $this->page_ready = false;
         $this->waitForPage();
     }
 
@@ -823,9 +825,11 @@ JS;
 
     private function waitForPage()
     {
-        $this->waitFor(function () {
-            return $this->page_ready;
-        });
+        if (!$this->page_ready) {
+            $this->waitFor(function () {
+                return $this->page_ready;
+            });
+        }
     }
 
     protected function deleteAllCookies()
