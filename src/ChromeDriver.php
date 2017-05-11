@@ -166,8 +166,9 @@ class ChromeDriver extends CoreDriver
      */
     public function forward()
     {
-        $this->send('Runtime.evaluate', ['expression' => 'window.history.forward()']);
-        $this->wait(5000, "document.readyState == 'complete'");
+        $this->runScript('window.history.forward()');
+        $this->page_ready = false;
+        $this->waitForPage();
     }
 
     /**
@@ -177,8 +178,9 @@ class ChromeDriver extends CoreDriver
      */
     public function back()
     {
-        $this->send('Runtime.evaluate', ['expression' => 'window.history.back()']);
-        $this->wait(5000, "document.readyState == 'complete'");
+        $this->runScript('window.history.back()');
+        $this->page_ready = false;
+        $this->waitForPage();
     }
 
     /**
@@ -246,7 +248,7 @@ class ChromeDriver extends CoreDriver
             $current_url = $this->getCurrentUrl();
             $path = substr($current_url, strpos($current_url, '/') - 1);
             $name = urlencode($name);
-            $this->send('Runtime.evaluate', ['expression' => "document.cookie='$name=$value;$expiration; path=$path'"]);
+            $this->runScript("document.cookie='$name=$value;$expiration; path=$path'");
         }
     }
 
@@ -332,7 +334,7 @@ class ChromeDriver extends CoreDriver
     {
         $expression = $this->getXpathExpression($xpath) . ' var items = 0; ' .
             'while (xpath_result.iterateNext()) { items++; }; items;';
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        $result = $this->runScript($expression)['result'];
 
         $node_elements = [];
 
@@ -487,7 +489,7 @@ JS;
     result
 JS;
 
-        $result = $this->send('Runtime.evaluate', ['expression' => $expression])['result'];
+        $result = $this->runScript($expression)['result'];
 
         if ($result['type'] === 'number') {
             if ($result['value'] == 1) {
@@ -673,7 +675,7 @@ JS;
             }
         }
 
-        $result = $this->send('Runtime.evaluate', ['expression' => $script])['result'];
+        $result = $this->runScript($script)['result'];
 
         if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
             if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
@@ -1004,5 +1006,15 @@ JS;
         $left = round($left + $width / 2);
         $top = round($top + $height / 2);
         return array($left, $top);
+    }
+
+    /**
+     * @param $script
+     * @return null
+     */
+    protected function runScript($script)
+    {
+        $this->waitForPage();
+        return $this->send('Runtime.evaluate', ['expression' => $script]);
     }
 }
