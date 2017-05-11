@@ -361,7 +361,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getText($xpath)
     {
-        $text = $this->getElementProperty($xpath, 'textContent');
+        $text = $this->getElementProperty($xpath, 'innerText');
         $text = trim(preg_replace('/\s+/', ' ', $text), ' ');
         return $text;
     }
