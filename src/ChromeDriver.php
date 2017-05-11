@@ -29,6 +29,8 @@ class ChromeDriver extends CoreDriver
     private $node_ids_ready;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
+    /** @var string */
+    private $current_url = null;
 
     /**
      * ChromeDriver constructor.
@@ -143,7 +145,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        return $this->send('Runtime.evaluate', ['expression' => 'window.location.href'])['result']['value'];
+        return $this->current_url;
     }
 
     /**
@@ -750,11 +752,13 @@ JS;
                     case 'Network.requestWillBeSent':
                         if ($data['params']['type'] == 'Document') {
                             $this->response = null;
+                            $this->current_url = $data['params']['request']['url'];
                         }
                         break;
                     case 'Network.responseReceived':
                         if ($data['params']['type'] == 'Document') {
                             $this->response = $data['params']['response'];
+                            $this->current_url = $data['params']['response']['url'];
                         }
                         break;
                     case 'Page.domContentEventFired':
