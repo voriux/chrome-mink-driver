@@ -546,7 +546,7 @@ JS;
     public function click($xpath)
     {
         $this->mouseOver($xpath);
-        $this->triggerMouseEvent($xpath, 'click');
+        $this->runScriptOnXpathElement($xpath, 'element.click()');
         $this->wait(5000, "document.readyState == 'complete'");
     }
 
