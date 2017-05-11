@@ -485,9 +485,13 @@ JS;
         } else if (element.tagName == 'INPUT' && element.type == 'file') {
         } else {
             element.value = expected_value;
-            element.dispatchEvent(new Event('keyup'))
+            var keyup = document.createEvent("Events");
+            keyup.initEvent("keyup", true, true);
+            element.dispatchEvent(keyup)
         }
-        element.dispatchEvent(new Event('change'))
+        var change = document.createEvent("Events");
+        change.initEvent("change", true, true);
+        element.dispatchEvent(change)
     }
     result
 JS;
