@@ -1043,7 +1043,14 @@ JS;
         $return = [];
         foreach ($properties as $property) {
             if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
-                $return[$property['name']] = $property['value']['value'];
+                if (!empty($property['value']['type']) && $property['value']['type'] == 'object' &&
+                    !empty($property['value']['className']) &&
+                    in_array($property['value']['className'], ['Array', 'Object'])
+                ) {
+                    $return[$property['name']] = $this->fetchObjectProperties($property['value']);
+                } else {
+                    $return[$property['name']] = $property['value']['value'];
+                }
             }
         }
         return $return;
