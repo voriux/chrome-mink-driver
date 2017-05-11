@@ -454,6 +454,7 @@ JS;
     if (!element) {
         result = 1
     } else {
+        element.scrollIntoViewIfNeeded();
         if (element.tagName == 'INPUT' && element.type == 'radio') {
             var name = element.name
             var fields = window.document.getElementsByName(name),
@@ -597,6 +598,7 @@ JS;
      */
     public function mouseOver($xpath)
     {
+        $this->runScriptOnXpathElement($xpath, 'element.scrollIntoViewIfNeeded()');
         list($left, $top) = $this->getCoordinatesForXpath($xpath);
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
     }
@@ -686,16 +688,20 @@ JS;
             throw new \Exception($result['description']);
         }
 
-        if ($result['type'] === 'object' && $result['objectId']) {
-            $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
-            $properties = $this->send('Runtime.getProperties', $parameters)['result'];
-            $return = [];
-            foreach ($properties as $property) {
-                if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
-                    $return[] = $property['value']['value'];
-                }
+        if ($result['type'] == 'object' && array_key_exists('subtype', $result)) {
+            if ($result['subtype'] == 'null') {
+                return null;
+            } elseif ($result['subtype'] == 'array' && $result['className'] == 'Array' && $result['objectId']) {
+                return $this->fetchObjectProperties($result);
+            } else {
+                $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
+                $properties = $this->send('Runtime.getProperties', $parameters)['result'];
+                return [];
             }
-            return $return;
+        } elseif ($result['type'] == 'object' && $result['className'] == 'Object') {
+            return $this->fetchObjectProperties($result);
+        } elseif ($result['type'] == 'undefined') {
+            return null;
         }
 
         return $result['value'];
@@ -1024,5 +1030,22 @@ JS;
     {
         $this->waitForPage();
         return $this->send('Runtime.evaluate', ['expression' => $script]);
+    }
+
+    /**
+     * @param $result
+     * @return array
+     */
+    protected function fetchObjectProperties($result):array
+    {
+        $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
+        $properties = $this->send('Runtime.getProperties', $parameters)['result'];
+        $return = [];
+        foreach ($properties as $property) {
+            if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
+                $return[$property['name']] = $property['value']['value'];
+            }
+        }
+        return $return;
     }
 }
