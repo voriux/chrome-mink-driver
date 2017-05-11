@@ -1013,12 +1013,12 @@ JS;
         $expression .= <<<JS
     var element = xpath_result.iterateNext();
     rect = element.getBoundingClientRect();
-    [rect.left, rect.top, rect.width, rect.height]
+    [rect.left, rect.top]
 JS;
 
-        list($left, $top, $width, $height) = $this->evaluateScript($expression);
-        $left = round($left + $width / 2);
-        $top = round($top + $height / 2);
+        list($left, $top) = $this->evaluateScript($expression);
+        $left = round($left + 1);
+        $top = round($top + 1);
         return array($left, $top);
     }
 
