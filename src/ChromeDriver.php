@@ -706,12 +706,16 @@ JS;
      */
     public function wait($timeout, $condition)
     {
-        $start = microtime(true);
-        $end = $start + $timeout / 1000.0;
+        $max_iterations = ceil($timeout / 10);
+        $iterations = 0;
+
         do {
             $result = $this->evaluateScript($condition);
-            usleep(100000);
-        } while (microtime(true) < $end && !$result);
+            if ($result || $iterations++ == $max_iterations) {
+                break;
+            }
+            usleep(10000);
+        } while (true);
         return (bool)$result;
     }
 
