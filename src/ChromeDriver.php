@@ -582,7 +582,7 @@ JS;
      */
     public function isVisible($xpath)
     {
-        return $this->runScriptOnXpathElement($xpath, 'window.getComputedStyle(element).display !== "none"');
+        return $this->runScriptOnXpathElement($xpath, 'element.offsetWidth > 0 && element.offsetHeight > 0;');
     }
 
     /**
