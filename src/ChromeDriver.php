@@ -1126,7 +1126,7 @@ JS;
         }
 
         $this->client = new Client($this->ws_url . "/devtools/page/" . $window_id);
-        $this->current_window = $window_id;
+        $this->windows_opened[] = $this->current_window = $window_id;
 
         # Chrome closes the connection if a message is sent in fragments
         $this->client->setFragmentSize(2000000);
