@@ -881,9 +881,7 @@ JS;
         try {
             $this->client->send(json_encode($payload));
         } catch (ConnectionException $exception) {
-            echo $exception->getMessage();
-            echo '> ' . json_encode($payload) . PHP_EOL;
-            exit;
+            throw new DriverException('Lost connection to chrome');
         }
 
         $data = $this->waitFor(function ($data) use ($payload) {
