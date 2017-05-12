@@ -452,6 +452,7 @@ JS;
     var expected_value = $value;
     var element = xpath_result.iterateNext();
     var result = 0;
+    var trigger_change = true;
     if (!element) {
         result = 1
     } else {
@@ -475,6 +476,7 @@ JS;
             if (element.checked != expected_value) {
                 element.click();
             }
+            trigger_change = false;
         } else if (element.tagName == 'SELECT') {
             if (element.multiple && typeof expected_value != 'object') {
                 expected_value = [expected_value]
@@ -493,9 +495,11 @@ JS;
             keyup.initEvent("keyup", true, true);
             element.dispatchEvent(keyup)
         }
-        var change = document.createEvent("Events");
-        change.initEvent("change", true, true);
-        element.dispatchEvent(change)
+        if (trigger_change) {
+            var change = document.createEvent("Events");
+            change.initEvent("change", true, true);
+            element.dispatchEvent(change)
+        }
         element.blur()
     }
     result
