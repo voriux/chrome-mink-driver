@@ -472,7 +472,9 @@ JS;
                 }
             }
         } else if (element.tagName == 'INPUT' && element.type == 'checkbox') {
-            element.checked = expected_value;
+            if (element.checked != expected_value) {
+                element.click();
+            }
         } else if (element.tagName == 'SELECT') {
             if (element.multiple && typeof expected_value != 'object') {
                 expected_value = [expected_value]
