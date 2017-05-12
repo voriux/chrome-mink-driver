@@ -16,7 +16,13 @@ class ChromeDriver extends CoreDriver
     /** @var string */
     private $api_url;
     /** @var string */
-    private $id;
+    private $ws_url;
+    /** @var string */
+    private $current_window;
+    /** @var string */
+    private $main_window;
+    /** @var array */
+    private $windows_opened = [];
     /** @var int */
     private $command_id = 1;
     /** @var HttpClient */
@@ -44,20 +50,15 @@ class ChromeDriver extends CoreDriver
         }
         $this->http_client = $http_client;
         $this->api_url = $api_url;
+        $this->ws_url = str_replace('http', 'ws', $api_url);
     }
 
     public function start()
     {
         $json = $this->http_client->get($this->api_url . '/json/new');
         $response = json_decode($json, true);
-        $ws_url = $response['webSocketDebuggerUrl'];
-        $this->id = $response['id'];
-        $this->client = new Client($ws_url);
-        $this->client->setFragmentSize(2000000); # Chrome closes the connection if a message is sent in fragments
-        $this->send('Page.enable');
-        $this->send('DOM.enable');
-        $this->send('Runtime.enable');
-        $this->send('Network.enable');
+        $this->main_window = $response['id'];
+        $this->connectToWindow($this->main_window);
         $this->is_started = true;
     }
 
@@ -89,9 +90,11 @@ class ChromeDriver extends CoreDriver
     {
         try {
             $this->client->close();
-        } catch (\WebSocket\ConnectionException $exception) {
+        } catch (ConnectionException $exception) {
         }
-        $this->http_client->get($this->api_url . '/json/close/' . $this->id);
+        foreach ($this->windows_opened as $window_name) {
+            $this->http_client->get($this->api_url . '/json/close/' . $window_name);
+        }
         $this->is_started = false;
     }
 
@@ -199,7 +202,22 @@ class ChromeDriver extends CoreDriver
      */
     public function switchToWindow($name = null)
     {
-        throw new UnsupportedDriverActionException('Windows management is not supported by %s', $this);
+        if (null === $name) {
+            $this->connectToWindow($this->main_window);
+        } else {
+            if (!in_array($name, $this->windows_opened)) {
+                $this->windows_opened[] = $name;
+            }
+
+            foreach (json_decode($this->http_client->get($this->api_url . '/json/list'), true) as $window) {
+                if ($window['title'] == $name) {
+                    $this->connectToWindow($window['id']);
+                    return;
+                }
+            }
+
+            throw new DriverException("Couldn't find window {$name}");
+        }
     }
 
     /**
@@ -315,15 +333,20 @@ class ChromeDriver extends CoreDriver
      */
     public function getWindowNames()
     {
-        throw new UnsupportedDriverActionException('Listing all window names is not supported by %s', $this);
+        $json = $this->http_client->get($this->api_url . '/json/list');
+        $names = [];
+        foreach (json_decode($json, true) as $window) {
+            $names[] = $window['id'];
+        }
+        return $names;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function getWindowName()
+    public function getCurrentWindow()
     {
-        throw new UnsupportedDriverActionException('Listing this window name is not supported by %s', $this);
+        return $this->current_window;
     }
 
     /**
@@ -1091,5 +1114,25 @@ JS;
             }
         }
         return $return;
+    }
+
+    /**
+     * @param $window_id
+     */
+    protected function connectToWindow($window_id)
+    {
+        if ($window_id === $this->current_window) {
+            return;
+        }
+
+        $this->client = new Client($this->ws_url . "/devtools/page/" . $window_id);
+        $this->current_window = $window_id;
+
+        # Chrome closes the connection if a message is sent in fragments
+        $this->client->setFragmentSize(2000000);
+        $this->send('Page.enable');
+        $this->send('DOM.enable');
+        $this->send('Runtime.enable');
+        $this->send('Network.enable');
     }
 }
