@@ -581,10 +581,11 @@ JS;
                 'timestamp' => time()
             ];
             $this->send('Input.dispatchMouseEvent', $parameters);
-            $this->wait(5000, "document.readyState == 'complete'");
         } else {
             $this->runScriptOnXpathElement($xpath, 'element.click()');
         }
+
+        $this->wait(3000, "document.readyState == 'complete'");
     }
 
     /**
