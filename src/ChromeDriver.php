@@ -121,8 +121,9 @@ class ChromeDriver extends CoreDriver
     public function reset()
     {
         $this->deleteAllCookies();
-        $this->stop();
-        $this->start();
+        $this->send('Network.setExtraHTTPHeaders', ['headers' => new \stdClass()]);
+        $this->page_ready = false;
+        $this->response = null;
     }
 
     /**
