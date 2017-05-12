@@ -146,7 +146,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        return $this->current_url;
+        $this->wait(3000, 'document.readyState == "complete"');
+        return $this->evaluateScript('window.location.href');
     }
 
     /**
@@ -455,6 +456,7 @@ JS;
         result = 1
     } else {
         element.scrollIntoViewIfNeeded();
+        element.focus();
         if (element.tagName == 'INPUT' && element.type == 'radio') {
             var name = element.name
             var fields = window.document.getElementsByName(name),
@@ -492,6 +494,7 @@ JS;
         var change = document.createEvent("Events");
         change.initEvent("change", true, true);
         element.dispatchEvent(change)
+        element.blur()
     }
     result
 JS;
