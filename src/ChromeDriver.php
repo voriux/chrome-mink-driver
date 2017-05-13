@@ -345,6 +345,19 @@ class ChromeDriver extends CoreDriver
     }
 
     /**
+     * Return the name of the currently active window.
+     *
+     * @return string the name of the current window
+     *
+     * @throws UnsupportedDriverActionException When operation not supported by the driver
+     * @throws DriverException                  When the operation cannot be done
+     */
+    public function getWindowName()
+    {
+        return $this->current_window;
+    }
+
+    /**
      * {@inheritdoc}
      */
     public function getCurrentWindow()
