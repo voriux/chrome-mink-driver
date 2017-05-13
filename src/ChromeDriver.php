@@ -175,7 +175,7 @@ class ChromeDriver extends CoreDriver
     public function forward()
     {
         $this->runScript('window.history.forward()');
-        $this->page_ready = false;
+        $this->wait(3000, "document.readyState == 'complete'");
         $this->waitForPage();
     }
 
@@ -187,7 +187,7 @@ class ChromeDriver extends CoreDriver
     public function back()
     {
         $this->runScript('window.history.back()');
-        $this->page_ready = false;
+        $this->wait(3000, "document.readyState == 'complete'");
         $this->waitForPage();
     }
 
