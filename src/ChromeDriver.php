@@ -338,7 +338,7 @@ class ChromeDriver extends CoreDriver
     {
         $json = $this->http_client->get($this->api_url . '/json/list');
         $names = [];
-        foreach (json_decode($json, true) as $window) {
+        foreach (array_reverse(json_decode($json, true)) as $window) {
             $names[] = $window['id'];
         }
         return $names;
