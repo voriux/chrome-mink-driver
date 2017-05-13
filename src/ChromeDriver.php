@@ -647,7 +647,29 @@ JS;
      */
     public function attachFile($xpath, $path)
     {
-        throw new UnsupportedDriverActionException('Attaching a file in an input is not supported by %s', $this);
+        $script = <<<JS
+    if (element == undefined || element.tagName != 'INPUT' || element.type != 'file') {
+        throw new Error("Element not found");
+    }
+    element.name
+JS;
+
+        $name = $this->runScriptOnXpathElement($xpath, $script);
+
+        $node_id = null;
+        foreach ($this->send('DOM.getFlattenedDocument')['nodes'] as $element) {
+            if (!empty($element['attributes'])) {
+                $num_attributes = count($element['attributes']);
+                for ($key = 0; $key < $num_attributes; $key += 2) {
+                    if ($element['attributes'][$key] == 'name' && $element['attributes'][$key + 1] == $name) {
+                        $this->send('DOM.setFileInputFiles', ['nodeId' => $element['nodeId'], 'files' => [$path]]);
+                        return;
+                    }
+                }
+            }
+        }
+
+        throw new ElementNotFoundException($this, 'file', 'xpath', $xpath);
     }
 
     /**
