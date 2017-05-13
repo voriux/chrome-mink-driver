@@ -122,6 +122,7 @@ class ChromeDriver extends CoreDriver
     {
         $this->deleteAllCookies();
         $this->send('Network.setExtraHTTPHeaders', ['headers' => new \stdClass()]);
+        $this->connectToWindow($this->main_window);
         $this->page_ready = false;
         $this->response = null;
     }
