@@ -11,8 +11,8 @@ test:
   tags: [docker]
   image: registry.gitlab.com/dmore/docker-chrome-headless
   script:
-    - composer install -o
-    - vendor/bin/phpunit
+    - composer install -o --ansi
+    - vendor/bin/phpunit --colors=always
   cache:
     key: common
     paths:
