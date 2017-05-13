@@ -90,6 +90,7 @@ class ChromeDriver extends CoreDriver
      */
     public function stop()
     {
+        $this->reset();
         try {
             $this->client->close();
         } catch (ConnectionException $exception) {
@@ -277,21 +278,17 @@ class ChromeDriver extends CoreDriver
      */
     public function setCookie($name, $value = null)
     {
+        $current_url = $this->getCurrentUrl();
         if ($value === null) {
-            $expiration = 'expires=Thu, 01 Jan 1970 00:00:01 GMT';
             foreach ($this->send('Network.getAllCookies')['cookies'] as $cookie) {
-                if ($name == $cookie['name']) {
-                    $parameters = ['expression' => "document.cookie='$name=;$expiration; path={$cookie['path']}'"];
-                    $this->send('Runtime.evaluate', $parameters);
+                if ($cookie['name'] == $name) {
+                    $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
+                    $this->send('Network.deleteCookie', $parameters);
                 }
             }
         } else {
-            $expiration = 'expires=' . date(DATE_COOKIE, time() + 86400);
             $value = urlencode($value);
-            $current_url = $this->getCurrentUrl();
-            $path = substr($current_url, strpos($current_url, '/') - 1);
-            $name = urlencode($name);
-            $this->runScript("document.cookie='$name=$value;$expiration; path=$path'");
+            $this->send('Network.setCookie', ['url' => $current_url, 'name' => $name, 'value' => $value]);
         }
     }
 
