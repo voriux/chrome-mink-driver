@@ -1,0 +1,18 @@
+variables:
+  COMPOSER_CACHE_DIR: ".cache/composer"
+
+stages;
+  - build
+  - test
+
+test:
+  stage: test
+  tags: [docker]
+  image: registry.gitlab.com/dmore/docker-chrome-headless/image
+  script:
+    - composer install -o
+    - vendor/bin/phpunit
+  cache:
+    key: common
+    files:
+      - .cache
