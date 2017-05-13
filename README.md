@@ -1,6 +1,12 @@
 Chrome Mink Driver
 ==================
 
+Mink driver for controlling chrome without the overhead of selenium.
+
+It communicates directly with chrome over HTTP and WebSockets, which allows it to work about twice as fast as chrome with selenium.
+
+For chrome 59+ it supports headless mode, eliminating the need to install a display server, and the overhead that comes with it.
+
 ## Installation:
 
 ```bash
