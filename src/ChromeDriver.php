@@ -211,8 +211,9 @@ class ChromeDriver extends CoreDriver
                 $this->windows_opened[] = $name;
             }
 
-            foreach (json_decode($this->http_client->get($this->api_url . '/json/list'), true) as $window) {
-                if ($window['title'] == $name) {
+            $windows = json_decode($this->http_client->get($this->api_url . '/json/list'), true);
+            foreach ($windows as $window) {
+                if ($window['id'] == $name || $window['title'] == $name) {
                     $this->connectToWindow($window['id']);
                     return;
                 }
