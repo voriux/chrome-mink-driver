@@ -17,3 +17,5 @@ test:
     key: common
     paths:
       - .cache
+      - vendor
+      - composer.lock
