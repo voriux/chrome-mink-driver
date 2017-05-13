@@ -37,6 +37,8 @@ class ChromeDriver extends CoreDriver
     private $response = null;
     /** @var string */
     private $current_url = null;
+    /** @var string[] */
+    private $request_headers = [];
 
     /**
      * ChromeDriver constructor.
@@ -121,10 +123,11 @@ class ChromeDriver extends CoreDriver
     public function reset()
     {
         $this->deleteAllCookies();
-        $this->send('Network.setExtraHTTPHeaders', ['headers' => new \stdClass()]);
         $this->connectToWindow($this->main_window);
         $this->page_ready = false;
         $this->response = null;
+        $this->request_headers = [];
+        $this->sendRequestHeaders();
     }
 
     /**
@@ -196,7 +199,11 @@ class ChromeDriver extends CoreDriver
      */
     public function setBasicAuth($user, $password)
     {
-        throw new UnsupportedDriverActionException('Basic auth setup is not supported by %s', $this);
+        if ($user === false) {
+            $this->unsetRequestHeader('Authorization');
+        } else {
+            $this->setRequestHeader('Authorization', 'Basic ' . base64_encode($user . ':' . $password));
+        }
     }
 
     /**
@@ -236,7 +243,19 @@ class ChromeDriver extends CoreDriver
      */
     public function setRequestHeader($name, $value)
     {
-        $this->send('Network.setExtraHTTPHeaders', ['headers' => [$name => $value]]);
+        $this->request_headers[$name] = $value;
+        $this->sendRequestHeaders();
+    }
+
+    /**
+     * @param $name
+     */
+    public function unsetRequestHeader($name)
+    {
+        if (array_key_exists($name, $this->request_headers)) {
+            unset($this->request_headers);
+            $this->sendRequestHeaders();
+        }
     }
 
     /**
@@ -1148,5 +1167,10 @@ JS;
         $this->send('DOM.enable');
         $this->send('Runtime.enable');
         $this->send('Network.enable');
+    }
+
+    protected function sendRequestHeaders()
+    {
+        $this->send('Network.setExtraHTTPHeaders', ['headers' => $this->request_headers ?: new \stdClass()]);
     }
 }
