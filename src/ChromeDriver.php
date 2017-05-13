@@ -368,7 +368,6 @@ class ChromeDriver extends CoreDriver
      *
      * @return string the name of the current window
      *
-     * @throws UnsupportedDriverActionException When operation not supported by the driver
      * @throws DriverException                  When the operation cannot be done
      */
     public function getWindowName()
