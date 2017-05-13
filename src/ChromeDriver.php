@@ -90,11 +90,13 @@ class ChromeDriver extends CoreDriver
      */
     public function stop()
     {
-        $this->reset();
         try {
+            @$this->reset();
             $this->client->close();
         } catch (ConnectionException $exception) {
+        } catch (DriverException $exception) {
         }
+
         foreach ($this->windows_opened as $window_name) {
             $this->http_client->get($this->api_url . '/json/close/' . $window_name);
         }
