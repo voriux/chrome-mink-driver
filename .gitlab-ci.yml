@@ -1,6 +1,6 @@
 variables:
   COMPOSER_CACHE_DIR: ".cache/composer"
-  DOCROOT: "${CI_PROJECT_DIR}"
+  DOCROOT: "${CI_PROJECT_DIR}/vendor/mink/driver-testsuite/web-fixtures"
 
 stages:
   - test
