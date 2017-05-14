@@ -47,6 +47,8 @@ default:
                         api_url: "http://localhost:9222"
 ```
 
+See https://gitlab.com/DMore/behat-chrome-skeleton for a fully working example.
+
 ## Contributing
 
 You are encouraged to fork this repository and contribute your own improvements.
