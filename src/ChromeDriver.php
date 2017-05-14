@@ -333,7 +333,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getContent()
     {
-        return str_replace(['&lt;', '&gt;'], ['<', '>'], $this->getHtml('//body'));
+        return $this->getHtml('//html');
     }
 
     /**
