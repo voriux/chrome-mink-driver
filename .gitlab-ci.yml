@@ -3,15 +3,12 @@ variables:
   DOCROOT: "${CI_PROJECT_DIR}"
 
 stages:
-  - build
   - test
 
-test:
+.test_template: &test_template
   stage: test
   tags: [docker]
-  image: registry.gitlab.com/dmore/docker-chrome-headless
   script:
-    - rm -f composer.lock
     - composer install -o --ansi --no-progress
     - vendor/bin/phpunit --colors=always
   cache:
@@ -19,3 +16,15 @@ test:
     paths:
       - .cache
       - vendor
+
+test 5.6:
+  <<: *test_template
+  image: registry.gitlab.com/dmore/docker-chrome-headless:5.6
+
+test 7.0:
+  <<: *test_template
+  image: registry.gitlab.com/dmore/docker-chrome-headless:7.0
+
+test 7.1:
+  <<: *test_template
+  image: registry.gitlab.com/dmore/docker-chrome-headless:7.1

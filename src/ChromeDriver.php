@@ -952,7 +952,7 @@ JS;
      * @param $xpath
      * @return string
      */
-    protected function getXpathExpression($xpath):string
+    protected function getXpathExpression($xpath)
     {
         $xpath = addslashes($xpath);
         $xpath = str_replace("\n", '\\n', $xpath);
@@ -1108,7 +1108,7 @@ JS;
      * @param $xpath
      * @return array
      */
-    protected function getCoordinatesForXpath($xpath):array
+    protected function getCoordinatesForXpath($xpath)
     {
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
@@ -1137,7 +1137,7 @@ JS;
      * @param $result
      * @return array
      */
-    protected function fetchObjectProperties($result):array
+    protected function fetchObjectProperties($result)
     {
         $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
         $properties = $this->send('Runtime.getProperties', $parameters)['result'];
