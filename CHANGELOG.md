@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 1.1.1
+
+* Licensed as MIT
+
 ## 1.1.0
 
 * Added support for basic http authentication
@@ -13,4 +17,4 @@ Changelog
 
 ## 1.0.1
 
-Fixed back() and forward() timing out when the page is served from cache.
+* Fixed back() and forward() timing out when the page is served from cache.
