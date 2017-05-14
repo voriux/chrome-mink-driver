@@ -39,13 +39,16 @@ class ChromeDriver extends CoreDriver
     private $current_url = null;
     /** @var string[] */
     private $request_headers = [];
+    /** @var string */
+    private $base_url;
 
     /**
      * ChromeDriver constructor.
      * @param string $api_url
      * @param HttpClient $http_client
+     * @param $base_url
      */
-    public function __construct($api_url = 'http://localhost:9222', HttpClient $http_client = null)
+    public function __construct($api_url = 'http://localhost:9222', HttpClient $http_client = null, $base_url)
     {
         if ($http_client == null) {
             $http_client = new HttpClient();
@@ -53,6 +56,7 @@ class ChromeDriver extends CoreDriver
         $this->http_client = $http_client;
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
+        $this->base_url = $base_url;
     }
 
     public function start()
@@ -62,6 +66,7 @@ class ChromeDriver extends CoreDriver
         $this->main_window = $response['id'];
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
+        $this->visit($this->base_url);
     }
 
     /**
@@ -127,10 +132,10 @@ class ChromeDriver extends CoreDriver
     {
         $this->deleteAllCookies();
         $this->connectToWindow($this->main_window);
-        $this->page_ready = false;
         $this->response = null;
         $this->request_headers = [];
         $this->sendRequestHeaders();
+        $this->visit($this->base_url);
     }
 
     /**

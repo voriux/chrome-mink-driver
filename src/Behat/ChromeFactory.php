@@ -29,7 +29,7 @@ final class ChromeFactory implements DriverFactory
      */
     public function buildDriver(array $config)
     {
-        return new Definition(ChromeDriver::class, [$config['api_url']]);
+        return new Definition(ChromeDriver::class, [$config['api_url'], null, '%mink.base_url%']);
     }
 
     /**
