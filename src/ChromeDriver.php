@@ -149,7 +149,7 @@ class ChromeDriver extends CoreDriver
         $this->send('Page.navigate', ['url' => $url]);
         $this->page_ready = false;
         $this->waitForPage();
-        $this->wait(3000, 'document.readyState == "complete"');
+        $this->waitForDom();
     }
 
     /**
@@ -161,7 +161,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        $this->wait(3000, 'document.readyState == "complete"');
+        $this->waitForDom();
         return $this->evaluateScript('window.location.href');
     }
 
@@ -185,7 +185,7 @@ class ChromeDriver extends CoreDriver
     public function forward()
     {
         $this->runScript('window.history.forward()');
-        $this->wait(3000, "document.readyState == 'complete'");
+        $this->waitForDom();
         $this->waitForPage();
     }
 
@@ -197,7 +197,7 @@ class ChromeDriver extends CoreDriver
     public function back()
     {
         $this->runScript('window.history.back()');
-        $this->wait(3000, "document.readyState == 'complete'");
+        $this->waitForDom();
         $this->waitForPage();
     }
 
@@ -645,7 +645,7 @@ JS;
             $this->runScriptOnXpathElement($xpath, 'element.click()');
         }
 
-        $this->wait(3000, "document.readyState == 'complete'");
+        $this->waitForDom();
     }
 
     /**
@@ -1200,5 +1200,10 @@ JS;
     protected function sendRequestHeaders()
     {
         $this->send('Network.setExtraHTTPHeaders', ['headers' => $this->request_headers ?: new \stdClass()]);
+    }
+
+    protected function waitForDom()
+    {
+        $this->wait(3000, 'document.readyState == "complete"');
     }
 }
