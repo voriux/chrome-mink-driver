@@ -949,9 +949,13 @@ JS;
     private function waitForPage()
     {
         if (!$this->page_ready) {
-            $this->waitFor(function () {
-                return $this->page_ready;
-            });
+            try {
+                $this->waitFor(function () {
+                    return $this->page_ready;
+                });
+            } catch (ConnectionException $exception) {
+                throw new DriverException("Page not loaded");
+            }
         }
     }
 
