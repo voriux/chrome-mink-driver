@@ -28,15 +28,9 @@ class ChromeDriver extends CoreDriver
     /** @var HttpClient */
     private $http_client;
     /** @var bool */
-    private $dom_ready;
-    /** @var bool */
     private $page_ready = true;
-    /** @var bool */
-    private $node_ids_ready;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
-    /** @var string */
-    private $current_url = null;
     /** @var string[] */
     private $request_headers = [];
     /** @var string */
@@ -885,34 +879,20 @@ JS;
                     case 'Network.requestWillBeSent':
                         if ($data['params']['type'] == 'Document') {
                             $this->response = null;
-                            $this->current_url = $data['params']['request']['url'];
                         }
                         break;
                     case 'Network.responseReceived':
                         if ($data['params']['type'] == 'Document') {
                             $this->response = $data['params']['response'];
-                            $this->current_url = $data['params']['response']['url'];
                         }
-                        break;
-                    case 'Page.domContentEventFired':
-                        $this->dom_ready = false;
-                        break;
-                    case 'DOM.documentUpdated':
-                        $this->dom_ready = true;
-                        $this->node_ids_ready = false;
                         break;
                     case 'Page.frameNavigated':
                     case 'Page.loadEventFired':
                     case 'Page.frameStartedLoading':
                         $this->page_ready = false;
-                        $this->dom_ready = false;
-                        $this->node_ids_ready = false;
                         break;
                     case 'Page.frameStoppedLoading':
                         $this->page_ready = true;
-                        break;
-                    case 'DOM.setChildNodes':
-                        $this->node_ids_ready = true;
                         break;
                     default:
                         continue;
