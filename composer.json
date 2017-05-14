@@ -2,7 +2,7 @@
     "name": "dmore/chrome-mink-driver",
     "description": "Mink driver for controlling chrome without selenium",
     "type": "library",
-    "license": "BSD",
+    "license": "MIT",
     "authors": [
         {
             "name": "Dorian More",
