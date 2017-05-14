@@ -1,4 +1,10 @@
 {
+    "repositories": [
+        {
+            "type": "git",
+            "url": "https://github.com/adorin/driver-testsuite.git"
+        }
+    ],
     "name": "dmore/chrome-mink-driver",
     "description": "Mink driver for controlling chrome without selenium",
     "type": "library",
@@ -14,7 +20,6 @@
             "DMore\\ChromeDriver\\": "src/"
         }
     },
-
     "autoload-dev": {
         "psr-4": {
             "DMore\\ChromeDriverTests\\": "tests/"
