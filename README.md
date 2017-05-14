@@ -46,3 +46,9 @@ default:
                     chrome:
                         api_url: "http://localhost:9222"
 ```
+
+## Contributing
+
+You are encouraged to fork this repository and contribute your own improvements.
+
+See [the contribution guide](CONTRIBUTING.md) for instructions.
