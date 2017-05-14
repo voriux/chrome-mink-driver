@@ -30,7 +30,7 @@ class ChromeDriver extends CoreDriver
     /** @var bool */
     private $dom_ready;
     /** @var bool */
-    private $page_ready;
+    private $page_ready = true;
     /** @var bool */
     private $node_ids_ready;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
@@ -66,7 +66,6 @@ class ChromeDriver extends CoreDriver
         $this->main_window = $response['id'];
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
-        $this->visit($this->base_url);
     }
 
     /**
@@ -135,7 +134,6 @@ class ChromeDriver extends CoreDriver
         $this->response = null;
         $this->request_headers = [];
         $this->sendRequestHeaders();
-        $this->visit($this->base_url);
     }
 
     /**
@@ -151,6 +149,7 @@ class ChromeDriver extends CoreDriver
         $this->send('Page.navigate', ['url' => $url]);
         $this->page_ready = false;
         $this->waitForPage();
+        $this->wait(3000, 'document.readyState == "complete"');
     }
 
     /**
@@ -285,7 +284,6 @@ class ChromeDriver extends CoreDriver
      */
     public function setCookie($name, $value = null)
     {
-        $current_url = $this->getCurrentUrl();
         if ($value === null) {
             foreach ($this->send('Network.getAllCookies')['cookies'] as $cookie) {
                 if ($cookie['name'] == $name) {
@@ -294,8 +292,9 @@ class ChromeDriver extends CoreDriver
                 }
             }
         } else {
+            $url = $this->base_url . '/';
             $value = urlencode($value);
-            $this->send('Network.setCookie', ['url' => $current_url, 'name' => $name, 'value' => $value]);
+            $this->send('Network.setCookie', ['url' => $url, 'name' => $name, 'value' => $value]);
         }
     }
 
