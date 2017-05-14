@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## 1.1.2
+
+* PHP 5.6 support
+
+* Fixed websocket timeout when visit() was not the first action after start() or reset()
+
 ## 1.1.1
 
 * Licensed as MIT
