@@ -34,4 +34,5 @@ Update packagist:
     GIT_STRATEGY: none
   image: tutum/curl
   script:
-    - curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=dmore&apiToken=${PACKAGIST_TOKEN}' -d'{"repository":{"url":"https://packagist.org/packages/dmore/chrome-mink-driver"}}' > /dev/null 2>&1
+    - RESULT=$(curl -XPOST -H'content-type:application/json' 'https://packagist.org/api/update-package?username=dmore&apiToken=${PACKAGIST_TOKEN}' -d'{"repository":{"url":"https://gitlab.com/DMore/chrome-mink-driver.git"}}' | grep status)
+    - test "${RESULT}" == '{"status":"success"}'
