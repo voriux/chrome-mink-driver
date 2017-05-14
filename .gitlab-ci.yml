@@ -11,6 +11,7 @@ test:
   tags: [docker]
   image: registry.gitlab.com/dmore/docker-chrome-headless
   script:
+    - rm -f composer.lock
     - composer install -o --ansi --no-progress
     - vendor/bin/phpunit --colors=always
   cache:
@@ -18,4 +19,3 @@ test:
     paths:
       - .cache
       - vendor
-      - composer.lock
