@@ -35,6 +35,8 @@ class ChromeDriver extends CoreDriver
     private $request_headers = [];
     /** @var string */
     private $base_url;
+    /** @var array */
+    private $pending_requests;
 
     /**
      * ChromeDriver constructor.
@@ -878,13 +880,17 @@ JS;
                 switch ($data['method']) {
                     case 'Network.requestWillBeSent':
                         if ($data['params']['type'] == 'Document') {
-                            $this->response = null;
+                            $this->pending_requests[$data['params']['requestId']] = true;
                         }
                         break;
                     case 'Network.responseReceived':
                         if ($data['params']['type'] == 'Document') {
+                            unset($this->pending_requests[$data['params']['requestId']]);
                             $this->response = $data['params']['response'];
                         }
+                        break;
+                    case 'Network.requestServedFromCache':
+                        unset($this->pending_requests[$data['params']['requestId']]);
                         break;
                     case 'Page.frameNavigated':
                     case 'Page.loadEventFired':
@@ -968,7 +974,7 @@ JS;
     {
         if (null === $this->response) {
             $this->waitFor(function () {
-                return null !== $this->response;
+                return null !== $this->response && count($this->pending_requests) == 0;
             });
         }
     }
