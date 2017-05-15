@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 1.1.3
+
+* Fixed timeout when checking for the status code of a request served from cache
+
 ## 1.1.2
 
 * PHP 5.6 support
