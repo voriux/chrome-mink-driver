@@ -620,14 +620,15 @@ JS;
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
         $can_click_script = "document.elementFromPoint({$left}, {$top}) == element;";
-        $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script)['result']['value'];
+        $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script);
         if ($can_click) {
             $parameters = [
                 'type' => 'mousePressed',
                 'x' => $left,
                 'y' => $top,
                 'button' => 'left',
-                'timestamp' => time()
+                'timestamp' => time(),
+                'clickCount' => 1,
             ];
             $this->send('Input.dispatchMouseEvent', $parameters);
             $parameters = [
