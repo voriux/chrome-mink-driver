@@ -616,33 +616,13 @@ JS;
      */
     public function click($xpath)
     {
-        list($left, $top) = $this->getCoordinatesForXpath($xpath);
+        list($left, $top, $right, $bottom) = $this->getCoordinatesForXpath($xpath);
+
+        $left = round(($right + $left) / 2);
+        $top = round(($bottom + $top) / 2);
+
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
-
-        $can_click_script = "document.elementFromPoint({$left}, {$top}) == element;";
-        $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script);
-        if ($can_click) {
-            $parameters = [
-                'type' => 'mousePressed',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time(),
-                'clickCount' => 1,
-            ];
-            $this->send('Input.dispatchMouseEvent', $parameters);
-            $parameters = [
-                'type' => 'mouseReleased',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time()
-            ];
-            $this->send('Input.dispatchMouseEvent', $parameters);
-        } else {
-            $this->runScriptOnXpathElement($xpath, 'element.click()');
-        }
-
+        $this->runScriptOnXpathElement($xpath, 'element.click()');
         $this->waitForDom();
     }
 
@@ -766,11 +746,15 @@ JS;
     public function dragTo($sourceXpath, $destinationXpath)
     {
         list($left, $top) = $this->getCoordinatesForXpath($sourceXpath);
+        $left++;
+        $top++;
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
         $parameters = ['type' => 'mousePressed', 'x' => $left, 'y' => $top, 'button' => 'left'];
         $this->send('Input.dispatchMouseEvent', $parameters);
 
         list($left, $top) = $this->getCoordinatesForXpath($destinationXpath);
+        $left++;
+        $top++;
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
         $parameters = ['type' => 'mouseReleased', 'x' => $left, 'y' => $top, 'button' => 'left'];
         $this->send('Input.dispatchMouseEvent', $parameters);
@@ -1122,13 +1106,15 @@ JS;
         $expression .= <<<JS
     var element = xpath_result.iterateNext();
     rect = element.getBoundingClientRect();
-    [rect.left, rect.top]
+    [rect.left, rect.top, rect.right, rect.bottom]
 JS;
 
-        list($left, $top) = $this->evaluateScript($expression);
-        $left = round($left + 1);
-        $top = round($top + 1);
-        return array($left, $top);
+        list($left, $top, $right, $bottom) = $this->evaluateScript($expression);
+        $left = ceil($left);
+        $top = ceil($top);
+        $right = floor($right);
+        $bottom = floor($bottom);
+        return [$left, $top, $right, $bottom];
     }
 
     /**
