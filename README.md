@@ -38,7 +38,7 @@ $mink = new Mink(array(
 default:
     extensions:
         DMore\ChromeDriver\Behat\ChromeExtension: ~
-        Behat\\MinkExtension:
+        Behat\MinkExtension:
             browser_name: chrome
             base_url: http://127.0.0.1
             sessions:
