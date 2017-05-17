@@ -346,7 +346,8 @@ class ChromeDriver extends CoreDriver
      */
     public function getScreenshot()
     {
-        return base64_decode($this->send('Page.captureScreenshot'));
+        $screenshot = $this->send('Page.captureScreenshot');
+        return base64_decode($screenshot['data']);
     }
 
     /**
