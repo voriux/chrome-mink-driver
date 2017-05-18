@@ -868,7 +868,17 @@ JS;
     private function waitFor(callable $is_ready)
     {
         do {
-            $response = $this->client->receive();
+            try {
+                $response = $this->client->receive();
+            } catch (ConnectionException $exception) {
+                $message = $exception->getMessage();
+                $stream_state = json_decode(substr($message, strpos($message, '{')), true);
+                if ($stream_state['timed_out'] == true && $stream_state['eof'] == false) {
+                    continue;
+                }
+
+                throw $exception;
+            }
             if (is_null($response)) {
                 return null;
             }
