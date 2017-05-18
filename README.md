@@ -52,22 +52,9 @@ $mink = new Mink(array(
 
 ```
 
-## With Behat:
+## Behat
 
-```yaml
-default:
-    extensions:
-        DMore\ChromeDriver\Behat\ChromeExtension: ~
-        Behat\MinkExtension:
-            browser_name: chrome
-            base_url: http://127.0.0.1
-            sessions:
-                default:
-                    chrome:
-                        api_url: "http://localhost:9222"
-```
-
-See https://gitlab.com/DMore/behat-chrome-skeleton for a fully working example.
+See [the behat extension](https://gitlab.com/DMore/behat-chrome-extension) if you want to use this driver with behat.
 
 ## Contributing
 
