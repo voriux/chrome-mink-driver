@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## 2.0.0
+
+* Fixed screenshot feature (thanks https://gitlab.com/OmarMoper)
+
+* Extracted behat extension to its own repository
+
 ## 1.1.3
 
 * Fixed timeout when checking for the status code of a request served from cache
