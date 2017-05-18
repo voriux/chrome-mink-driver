@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 2.0.1
+
+* Removed behat dependency
+
 ## 2.0.0
 
 * Fixed screenshot feature (thanks https://gitlab.com/OmarMoper)
