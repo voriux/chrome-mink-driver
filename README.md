@@ -17,6 +17,26 @@ The same suite running against chrome 58 with xvfb and selenium takes ~60 minute
 composer require dmore/chrome-mink-driver
 ```
 
+## Requirements:
+
+* Google chrome or chromium running with remote debugging
+
+Example:
+
+```bash
+google-chrome-stable --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
+```
+
+or headless (59+):
+
+```bash
+google-chrome-unstable --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222
+```
+
+The official docker image includes chrome 60 running headless.
+
+See https://gitlab.com/DMore/behat-chrome-skeleton for a fully working example.
+
 ## Usage:
 
 ```php
