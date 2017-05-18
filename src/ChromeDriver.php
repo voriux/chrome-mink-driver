@@ -390,7 +390,7 @@ class ChromeDriver extends CoreDriver
      * @return \Behat\Mink\Element\NodeElement[]
      * @throws ElementNotFoundException
      */
-    public function findElementXpaths($xpath)
+    protected function findElementXpaths($xpath)
     {
         $expression = $this->getXpathExpression($xpath) . ' var items = 0; ' .
             'while (xpath_result.iterateNext()) { items++; }; items;';
