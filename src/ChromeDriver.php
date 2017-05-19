@@ -820,6 +820,10 @@ JS;
             return null;
         }
 
+        if (!array_key_exists('value', $result)) {
+            return null;
+        }
+
         return $result['value'];
     }
 
