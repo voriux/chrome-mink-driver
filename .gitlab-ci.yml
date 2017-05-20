@@ -28,12 +28,3 @@ test 7.0:
 test 7.1:
   <<: *test_template
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.1
-
-Update packagist:
-  variables:
-    GIT_STRATEGY: none
-  image: tutum/curl
-  script:
-    - RESULT=$(curl -sS -XPOST -H'content-type:application/json' "https://packagist.org/api/update-package?username=dmore&apiToken=${PACKAGIST_TOKEN}" -d'{"repository":{"url":"https://gitlab.com/DMore/chrome-mink-driver.git"}}')
-    - echo "${RESULT}"
-    - test "${RESULT}" == '{"status":"success"}'
