@@ -1031,7 +1031,7 @@ JS;
     {
         $script = <<<JS
     if (element) {
-        element.dispatchEvent(new MouseEvent('$event'));
+        element.dispatchEvent(new MouseEvent('$event', { bubbles: true }));
     }
     element != null
 JS;
