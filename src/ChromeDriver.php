@@ -29,6 +29,8 @@ class ChromeDriver extends CoreDriver
     private $http_client;
     /** @var bool */
     private $page_ready = true;
+    /** @var bool */
+    private $has_javascript_dialog = false;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
     /** @var string[] */
@@ -869,9 +871,20 @@ JS;
         $this->runScriptOnXpathElement($xpath, 'element.submit()', 'form');
     }
 
+    public function acceptAlert($text = '')
+    {
+        $this->send('Page.handleJavaScriptDialog', ['accept' => true, 'promptText' => $text]);
+    }
+
+    public function dismissAlert()
+    {
+        $this->send('Page.handleJavaScriptDialog', ['accept' => false]);
+    }
+
     private function waitFor(callable $is_ready)
     {
-        do {
+        $data = [];
+        while (true) {
             try {
                 $response = $this->client->receive();
             } catch (ConnectionException $exception) {
@@ -893,6 +906,9 @@ JS;
 
             if (array_key_exists('method', $data)) {
                 switch ($data['method']) {
+                    case 'Page.javascriptDialogOpening':
+                        $this->has_javascript_dialog = true;
+                        break 2;
                     case 'Network.requestWillBeSent':
                         if ($data['params']['type'] == 'Document') {
                             $this->pending_requests[$data['params']['requestId']] = true;
@@ -919,7 +935,11 @@ JS;
                         continue;
                 }
             }
-        } while (!$is_ready($data));
+
+            if ($is_ready($data)) {
+                break;
+            }
+        }
 
         return $data;
     }
@@ -948,7 +968,11 @@ JS;
             return array_key_exists('id', $data) && $data['id'] == $payload['id'];
         });
 
-        return $data['result'];
+        if (isset($data['result'])) {
+            return $data['result'];
+        }
+
+        return ['result' => ['type' => 'undefined']];
     }
 
     private function waitForPage()
@@ -1205,6 +1229,8 @@ JS;
 
     protected function waitForDom()
     {
-        $this->wait(3000, 'document.readyState == "complete"');
+        if (!$this->has_javascript_dialog) {
+            $this->wait(3000, 'document.readyState == "complete"');
+        }
     }
 }
