@@ -1076,7 +1076,6 @@ JS;
         ];
 
         $script = <<<JS
-    var opts = $options;
     if (element) {
         element.focus();
         var event = document.createEvent("Events");
