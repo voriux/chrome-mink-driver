@@ -680,7 +680,7 @@ JS;
      */
     public function doubleClick($xpath)
     {
-        $this->mouseOver($xpath);
+        $this->click($xpath);
         $this->triggerMouseEvent($xpath, 'dblclick');
     }
 
