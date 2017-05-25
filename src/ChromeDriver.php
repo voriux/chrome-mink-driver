@@ -657,7 +657,7 @@ JS;
     element.name
 JS;
 
-        $name = $this->runScriptOnXpathElement($xpath, $script);
+        $name = $this->runScriptOnXpathElement($xpath, $script, 'file input');
 
         $node_id = null;
         foreach ($this->send('DOM.getFlattenedDocument')['nodes'] as $element) {
@@ -706,7 +706,7 @@ JS;
      */
     public function isSelected($xpath)
     {
-        return $this->runScriptOnXpathElement($xpath, '!!element.selected');
+        return $this->runScriptOnXpathElement($xpath, '!!element.selected', 'select');
     }
 
     /**
@@ -866,7 +866,7 @@ JS;
      */
     public function submitForm($xpath)
     {
-        $this->runScriptOnXpathElement($xpath, 'element.submit()');
+        $this->runScriptOnXpathElement($xpath, 'element.submit()', 'form');
     }
 
     private function waitFor(callable $is_ready)
@@ -1004,7 +1004,7 @@ JS;
     element.tagName == 'SELECT' || (element.tagName == 'INPUT' && element.type == 'radio')
 JS;
         if (!$this->runScriptOnXpathElement($xpath, $script)) {
-            throw new ElementNotFoundException($this, 'checkbox', $xpath);
+            throw new ElementNotFoundException($this, 'select or radio', 'xpath', $xpath);
         }
     }
 
@@ -1018,7 +1018,7 @@ JS;
     element.tagName == 'INPUT' && element.type == 'checkbox'
 JS;
         if (!$this->runScriptOnXpathElement($xpath, $script)) {
-            throw new ElementNotFoundException($this, 'checkbox', $xpath);
+            throw new ElementNotFoundException($this, 'checkbox', 'xpath', $xpath);
         }
     }
 
@@ -1099,11 +1099,12 @@ JS;
     /**
      * @param $xpath
      * @param $script
+     * @param null $type
      * @return array
      * @throws ElementNotFoundException
      * @throws \Exception
      */
-    protected function runScriptOnXpathElement($xpath, $script)
+    protected function runScriptOnXpathElement($xpath, $script, $type = null)
     {
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
@@ -1117,7 +1118,7 @@ JS;
             $result = $this->evaluateScript($expression);
         } catch (\Exception $exception) {
             if (strpos($exception->getMessage(), 'Element not found') !== false) {
-                throw new ElementNotFoundException($this, null, $xpath);
+                throw new ElementNotFoundException($this, $type, 'xpath', $xpath);
             }
             throw $exception;
         }
