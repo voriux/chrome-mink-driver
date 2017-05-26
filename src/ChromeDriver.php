@@ -394,16 +394,35 @@ class ChromeDriver extends CoreDriver
      */
     protected function findElementXpaths($xpath)
     {
-        $expression = $this->getXpathExpression($xpath) . ' var items = 0; ' .
-            'while (xpath_result.iterateNext()) { items++; }; items;';
-        $result = $this->runScript($expression)['result'];
-
-        $node_elements = [];
-
-        for ($i = 1; $i <= $result['value']; $i++) {
-            $node_elements[] = sprintf('(%s)[%d]', $xpath, $i);
+        $expression = $this->getXpathExpression($xpath);
+        $expression .= <<<JS
+    function getPathTo(element) {
+        if (typeof element.id == 'string' && element.id != '') {
+            return '//' + element.tagName + '[@id="'+element.id+'"]';
         }
-        return $node_elements;
+        if (element === document.body || element === document.head || element === document.documentElement) {
+            return '//' + element.tagName;
+        }
+
+        var ix = 0;
+        var siblings = element.parentNode.childNodes;
+        for (var i = 0; i < siblings.length; i++) {
+            var sibling = siblings[i];
+            if (sibling === element)
+                return getPathTo(element.parentNode) + '/' + element.tagName + '[' + (ix + 1) + ']';
+            if (sibling.nodeType===1 && sibling.tagName===element.tagName)
+                ix++;
+        }
+    }
+    var result = [];
+    while (element = xpath_result.iterateNext()) {
+        result.push(getPathTo(element));
+    };
+    result
+JS;
+
+        $value = $this->evaluateScript($expression);
+        return $value;
     }
 
     /**
