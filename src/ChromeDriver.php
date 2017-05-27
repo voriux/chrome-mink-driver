@@ -230,6 +230,22 @@ class ChromeDriver extends CoreDriver
                     return;
                 }
             }
+            try {
+                $this->runScript("window.latest_popup = window.open('', '{$name}');");
+                $condition = "window.latest_popup.location.href != 'about:blank';";
+                $this->wait(2000, $condition);
+                $script = "[window.latest_popup.document.title, window.latest_popup.location.href]";
+                list($title, $href) = $this->evaluateScript($script);
+
+                foreach ($this->getWindowNames() as $id) {
+                    $info = $this->send('Target.getTargetInfo', ['targetId' => $id])['targetInfo'];
+                    if ($info['type'] === 'page' && $info['url'] == $href && $info['title'] == $title) {
+                        $this->switchToWindow($id);
+                        return;
+                    }
+                }
+            } catch (\Exception $e) {
+            }
 
             throw new DriverException("Couldn't find window {$name}");
         }
@@ -394,6 +410,7 @@ class ChromeDriver extends CoreDriver
      */
     protected function findElementXpaths($xpath)
     {
+        $this->waitForDom();
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
     function getPathTo(element) {
@@ -1242,6 +1259,9 @@ JS;
         $this->send('DOM.enable');
         $this->send('Runtime.enable');
         $this->send('Network.enable');
+        $this->send('Target.setDiscoverTargets', ['discover' => true]);
+        $this->send('Target.setAutoAttach', ['autoAttach' => true, 'waitForDebuggerOnStart' => false]);
+        $this->send('Target.setAttachToFrames', ['value' => true]);
     }
 
     protected function sendRequestHeaders()
