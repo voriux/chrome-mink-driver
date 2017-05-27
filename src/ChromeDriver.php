@@ -637,32 +637,8 @@ JS;
      */
     public function click($xpath)
     {
-        list($left, $top) = $this->getCoordinatesForXpath($xpath);
-        $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
-
-        $can_click_script = "document.elementFromPoint({$left}, {$top}) == element;";
-        $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script)['result']['value'];
-        if ($can_click) {
-            $parameters = [
-                'type' => 'mousePressed',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time()
-            ];
-            $this->send('Input.dispatchMouseEvent', $parameters);
-            $parameters = [
-                'type' => 'mouseReleased',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time()
-            ];
-            $this->send('Input.dispatchMouseEvent', $parameters);
-        } else {
-            $this->runScriptOnXpathElement($xpath, 'element.click()');
-        }
-
+        $this->mouseOver($xpath);
+        $this->runScriptOnXpathElement($xpath, 'element.click()');
         $this->waitForDom();
     }
 
