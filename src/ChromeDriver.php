@@ -397,7 +397,7 @@ class ChromeDriver extends CoreDriver
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
     function getPathTo(element) {
-        if (typeof element.id == 'string' && element.id != '') {
+        if (typeof element.id == 'string' && element.id != '' && document.getElementById(element.id) === element) {
             return '//' + element.tagName + '[@id="'+element.id+'"]';
         }
         if (element === document.body || element === document.head || element === document.documentElement) {
