@@ -681,7 +681,7 @@ JS;
         list($left, $top) = $this->getCoordinatesForXpath($xpath);
         $this->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
-        $can_click_script = "document.elementFromPoint({$left}, {$top}) == element;";
+        $can_click_script = "document.elementFromPoint({$left}, {$top}) == element && element.form == null;";
         $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script);
         if ($can_click) {
             $parameters = [
@@ -703,7 +703,7 @@ JS;
             ];
             $this->send('Input.dispatchMouseEvent', $parameters);
         } else {
-            $this->triggerMouseEvent($xpath, 'click');
+            $this->runScriptOnXpathElement($xpath, 'element.click()');
         }
         $this->waitForDom();
     }
