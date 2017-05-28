@@ -39,6 +39,11 @@ class ChromeDriver extends CoreDriver
     private $base_url;
     /** @var array */
     private $pending_requests;
+    /**
+     * @var string The document node to run xpath queries on.
+     * Can either be 'document' or valid javascript for an iframe's javascript
+     */
+    private $document = 'document';
 
     /**
      * ChromeDriver constructor.
@@ -127,6 +132,7 @@ class ChromeDriver extends CoreDriver
      */
     public function reset()
     {
+        $this->document = 'document';
         $this->deleteAllCookies();
         $this->connectToWindow($this->main_window);
         $this->response = null;
@@ -256,7 +262,20 @@ class ChromeDriver extends CoreDriver
      */
     public function switchToIFrame($name = null)
     {
-        throw new UnsupportedDriverActionException('iFrames management is not supported by %s', $this);
+        if ($name == null) {
+            $this->document = 'document';
+        } else {
+            $xpath = "//IFRAME[@id='{$name}' or @name='{$name}']";
+            $script = <<<JS
+        window.active_iframe = document.evaluate("{$xpath}", {$this->document}.body).iterateNext();
+        window.active_iframe != null;
+JS;
+
+            if (!$this->evaluateScript($script)) {
+                throw new DriverException("No frame with id or name '{$name}' was found.");
+            }
+            $this->document = "window.active_iframe.contentWindow.document";
+        }
     }
 
     /**
@@ -417,7 +436,10 @@ class ChromeDriver extends CoreDriver
         if (typeof element.id == 'string' && element.id != '' && document.getElementById(element.id) === element) {
             return '//' + element.tagName + '[@id="'+element.id+'"]';
         }
-        if (element === document.body || element === document.head || element === document.documentElement) {
+        if (element === {$this->document}.body ||
+            element === {$this->document}.head ||
+            element === {$this->document}.documentElement
+        ) {
             return '//' + element.tagName;
         }
 
@@ -1040,7 +1062,7 @@ JS;
     {
         $xpath = addslashes($xpath);
         $xpath = str_replace("\n", '\\n', $xpath);
-        return "var xpath_result = document.evaluate(\"{$xpath}\", document.body);";
+        return "var xpath_result = document.evaluate(\"{$xpath}\", {$this->document});";
     }
 
     protected function getElementProperty($xpath, $property)
@@ -1252,6 +1274,7 @@ JS;
 
         $this->client = new Client($this->ws_url . "/devtools/page/" . $window_id);
         $this->windows_opened[] = $this->current_window = $window_id;
+        $this->document = 'document';
 
         # Chrome closes the connection if a message is sent in fragments
         $this->client->setFragmentSize(2000000);
