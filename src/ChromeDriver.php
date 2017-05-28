@@ -562,14 +562,13 @@ JS;
     public function setValue($xpath, $value)
     {
         $expression = $this->getXpathExpression($xpath);
-        if (!ctype_digit($value)) {
-            $value = json_encode($value);
-        }
+        $json_value = ctype_digit($value) ? $value : json_encode($value);
         $expression .= <<<JS
-    var expected_value = $value;
+    var expected_value = $json_value;
     var element = xpath_result.iterateNext();
     var result = 0;
     var trigger_change = true;
+    var trigger_blur = true;
     if (!element) {
         result = 1
     } else {
@@ -608,16 +607,19 @@ JS;
         } else if (element.tagName == 'INPUT' && element.type == 'file') {
         } else {
             element.value = expected_value;
-            var keyup = document.createEvent("Events");
-            keyup.initEvent("keyup", true, true);
-            element.dispatchEvent(keyup)
+            if (element.type == 'text' || element.tagName == 'textarea') {
+                trigger_blur = false;
+                result = 2;
+            }
         }
         if (trigger_change) {
             var change = document.createEvent("Events");
             change.initEvent("change", true, true);
             element.dispatchEvent(change)
         }
-        element.blur()
+        if (trigger_blur) {
+            element.blur();
+        }
     }
     result
 JS;
@@ -627,6 +629,14 @@ JS;
         if ($result['type'] === 'number') {
             if ($result['value'] == 1) {
                 throw new ElementNotFoundException($this, null, $xpath);
+            }
+            if ($result['value'] == 2) {
+                if (strlen($value) > 0) {
+                    $this->send('Input.dispatchKeyEvent', ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8]);
+                    $this->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+                    $this->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $value[-1]]);
+                    $this->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+                }
             }
         } elseif ($result['type'] == 'error') {
             throw new \Exception($result['description']);
