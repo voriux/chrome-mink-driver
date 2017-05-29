@@ -1,6 +1,26 @@
 Changelog
 =========
 
+## 2.1.0
+
+* Added support for switching to popups which chrome turned opened as tabs
+
+* Improved findElementXpaths to get the shortest xpath possible
+
+* Fixed xpath queries not always returning the elements in the correct order
+
+* Fixed setValue not always triggering keyup/keydown
+
+* Fixed popup blocker stopping popups triggered by click
+
+* Fixed deadlock when javascript prompt/alert is shown
+
+* Fixed double click not dispatching an event for the first click
+
+* Fixed double click not bubbling
+
+* Fixed page load timing out after 5 seconds
+
 ## 2.0.1
 
 * Removed behat dependency
