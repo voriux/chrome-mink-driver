@@ -20,11 +20,7 @@ class ChromePage extends DevToolsConnection
         parent::connect();
         $this->send('Page.enable');
         $this->send('DOM.enable');
-        $this->send('Runtime.enable');
         $this->send('Network.enable');
-        $this->send('Target.setDiscoverTargets', ['discover' => true]);
-        $this->send('Target.setAutoAttach', ['autoAttach' => true, 'waitForDebuggerOnStart' => false]);
-        $this->send('Target.setAttachToFrames', ['value' => true]);
     }
 
     public function reset()
@@ -41,8 +37,8 @@ class ChromePage extends DevToolsConnection
 
     public function reload()
     {
-        $this->send('Page.reload');
         $this->page_ready = false;
+        $this->send('Page.reload');
     }
 
     public function waitForLoad()
@@ -72,6 +68,11 @@ class ChromePage extends DevToolsConnection
         return $this->has_javascript_dialog;
     }
 
+    public function getTabs()
+    {
+        return $this->send('Target.getTargets')['targetInfos'];
+    }
+
     private function waitForHttpResponse()
     {
         if (null === $this->response) {
@@ -88,10 +89,6 @@ class ChromePage extends DevToolsConnection
      */
     protected function processResponse(array $data)
     {
-        if (array_key_exists('error', $data)) {
-            throw new DriverException($data['error']['message'], $data['error']['code']);
-        }
-
         if (array_key_exists('method', $data)) {
             switch ($data['method']) {
                 case 'Page.javascriptDialogOpening':

@@ -8,6 +8,8 @@ use WebSocket\ConnectionException;
 
 class ChromeDriver extends CoreDriver
 {
+    /** @var ChromeBrowser */
+    private $browser;
     /** @var ChromePage */
     private $page;
     private $is_started = false;
@@ -19,8 +21,6 @@ class ChromeDriver extends CoreDriver
     private $current_window;
     /** @var string */
     private $main_window;
-    /** @var array */
-    private $windows_opened = [];
     /** @var HttpClient */
     private $http_client;
     /** @var string[] */
@@ -48,13 +48,15 @@ class ChromeDriver extends CoreDriver
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
+        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser');
+        $this->browser->setHttpClient($http_client);
+        $this->browser->setHttpUri($api_url);
     }
 
     public function start()
     {
-        $json = $this->http_client->get($this->api_url . '/json/new');
-        $response = json_decode($json, true);
-        $this->main_window = $response['id'];
+        $this->browser->connect();
+        $this->main_window = $this->browser->start();
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
     }
@@ -87,14 +89,14 @@ class ChromeDriver extends CoreDriver
     {
         try {
             @$this->reset();
-            $this->page->close();
+            $this->browser->close();
+            foreach ($this->page->getTabs() as $tab) {
+                $this->http_client->get($this->api_url . '/json/close/' . $tab['windowId']);
+            }
         } catch (ConnectionException $exception) {
         } catch (DriverException $exception) {
         }
 
-        foreach ($this->windows_opened as $window_name) {
-            $this->http_client->get($this->api_url . '/json/close/' . $window_name);
-        }
         $this->is_started = false;
     }
 
@@ -210,14 +212,9 @@ class ChromeDriver extends CoreDriver
         if (null === $name) {
             $this->connectToWindow($this->main_window);
         } else {
-            if (!in_array($name, $this->windows_opened)) {
-                $this->windows_opened[] = $name;
-            }
-
-            $windows = json_decode($this->http_client->get($this->api_url . '/json/list'), true);
-            foreach ($windows as $window) {
-                if ($window['id'] == $name || $window['title'] == $name) {
-                    $this->connectToWindow($window['id']);
+            foreach ($this->page->getTabs() as $tab) {
+                if ($tab['targetId'] == $name || $tab['title'] == $name) {
+                    $this->connectToWindow($tab['targetId']);
                     return;
                 }
             }
@@ -375,10 +372,9 @@ JS;
      */
     public function getWindowNames()
     {
-        $json = $this->http_client->get($this->api_url . '/json/list');
         $names = [];
-        foreach (array_reverse(json_decode($json, true)) as $window) {
-            $names[] = $window['id'];
+        foreach ($this->page->getTabs() as $tab) {
+            $names[] = $tab['targetId'];
         }
         return $names;
     }
@@ -1149,7 +1145,7 @@ JS;
 
         $this->page = new ChromePage($this->ws_url . '/devtools/page/' . $window_id);
         $this->page->connect();
-        $this->windows_opened[] = $this->current_window = $window_id;
+        $this->current_window = $window_id;
         $this->document = 'document';
     }
 
