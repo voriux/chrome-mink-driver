@@ -668,29 +668,33 @@ JS;
     {
         $this->mouseOver($xpath);
 
-        list($left, $top) = $this->getCoordinatesForXpath($xpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
+        if ($this->runScriptOnXpathElement($xpath, 'element.tagName == "OPTION"')) {
+            $this->setValue($xpath . '/..', $this->runScriptOnXpathElement($xpath, 'element.value'));
+        } else {
+            list($left, $top) = $this->getCoordinatesForXpath($xpath);
+            $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
-        $parameters = [
-            'type' => 'mousePressed',
-            'x' => $left + 5,
-            'y' => $top + 5,
-            'button' => 'left',
-            'timestamp' => time(),
-            'clickCount' => 1,
-        ];
-        $this->page->send('Input.dispatchMouseEvent', $parameters);
-        $parameters = [
-            'type' => 'mouseReleased',
-            'x' => $left + 5,
-            'y' => $top + 5,
-            'button' => 'left',
-            'timestamp' => time(),
-            'clickCount' => 1,
-        ];
-        $this->page->send('Input.dispatchMouseEvent', $parameters);
-        usleep(5000);
-        $this->waitForDom();
+            $parameters = [
+                'type' => 'mousePressed',
+                'x' => $left + 5,
+                'y' => $top + 5,
+                'button' => 'left',
+                'timestamp' => time(),
+                'clickCount' => 1,
+            ];
+            $this->page->send('Input.dispatchMouseEvent', $parameters);
+            $parameters = [
+                'type' => 'mouseReleased',
+                'x' => $left + 5,
+                'y' => $top + 5,
+                'button' => 'left',
+                'timestamp' => time(),
+                'clickCount' => 1,
+            ];
+            $this->page->send('Input.dispatchMouseEvent', $parameters);
+            usleep(5000);
+            $this->waitForDom();
+        }
     }
 
     /**
@@ -746,7 +750,14 @@ JS;
      */
     public function isVisible($xpath)
     {
-        return $this->runScriptOnXpathElement($xpath, 'element.offsetWidth > 0 && element.offsetHeight > 0;');
+        $script = <<<JS
+    if (element.tagName == 'OPTION') {
+        element = element.parentNode
+    }
+    element.offsetWidth > 0 && element.offsetHeight > 0;
+JS;
+
+        return $this->runScriptOnXpathElement($xpath, $script);
     }
 
     /**
