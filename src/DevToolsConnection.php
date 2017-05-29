@@ -1,6 +1,7 @@
 <?php
 namespace DMore\ChromeDriver;
 
+use Behat\Mink\Exception\DriverException;
 use WebSocket\Client;
 use WebSocket\ConnectionException;
 
@@ -76,6 +77,10 @@ abstract class DevToolsConnection
             }
             $data = json_decode($response, true);
 
+            if (array_key_exists('error', $data)) {
+                throw new DriverException($data['error']['message'], $data['error']['code']);
+            }
+
             if ($this->processResponse($data)) {
                 break;
             }
@@ -88,5 +93,9 @@ abstract class DevToolsConnection
         return $data;
     }
 
+    /**
+     * @param array $data
+     * @return bool
+     */
     abstract protected function processResponse(array $data);
 }
