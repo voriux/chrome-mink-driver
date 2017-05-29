@@ -717,7 +717,8 @@ JS;
                 $num_attributes = count($element['attributes']);
                 for ($key = 0; $key < $num_attributes; $key += 2) {
                     if ($element['attributes'][$key] == 'name' && $element['attributes'][$key + 1] == $name) {
-                        $this->page->send('DOM.setFileInputFiles', ['nodeId' => $element['nodeId'], 'files' => [$path]]);
+                        $this->page->send('DOM.setFileInputFiles',
+                            ['nodeId' => $element['nodeId'], 'files' => [$path]]);
                         return;
                     }
                 }
