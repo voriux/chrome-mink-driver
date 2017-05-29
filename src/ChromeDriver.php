@@ -540,86 +540,87 @@ JS;
      */
     public function setValue($xpath, $value)
     {
-        $expression = $this->getXpathExpression($xpath);
-        $json_value = ctype_digit($value) ? $value : json_encode($value);
-        $expression .= <<<JS
-    var expected_value = $json_value;
-    var element = xpath_result.iterateNext();
-    var result = 0;
-    var trigger_change = true;
-    var trigger_blur = true;
-    if (!element) {
-        result = 1
-    } else {
-        element.scrollIntoViewIfNeeded();
-        element.focus();
-        if (element.tagName == 'INPUT' && element.type == 'radio') {
-            var name = element.name
-            var fields = window.document.getElementsByName(name),
-                i, l = fields.length;
-            for (i = 0; i < l; i++) {
-                var field = fields.item(i);
-                if (field.form === element.form) {
-                    if (field.value === expected_value) {
-                        field.checked = true;
-                    } else {
-                        field.checked = false;
-                    }
-                }
-            }
-        } else if (element.tagName == 'INPUT' && element.type == 'checkbox') {
-            if (element.checked != expected_value) {
-                element.click();
-            }
-            trigger_change = false;
-        } else if (element.tagName == 'SELECT') {
-            if (element.multiple && typeof expected_value != 'object') {
-                expected_value = [expected_value]
-            }
-            for (var i = 0; i < element.options.length; i++) {
-                if ((element.multiple && expected_value.includes(element.options[i].value)) || element.options[i].value == expected_value) {
-                    element.options[i].selected = true;
-                } else {
-                    element.options[i].selected = false;
-                }
-            }
-        } else if (element.tagName == 'INPUT' && element.type == 'file') {
+        $is_text_field = "(element.tagName == 'INPUT' && element.type == 'text') || element.tagName == 'TEXTAREA'";
+        if (!$this->runScriptOnXpathElement($xpath, $is_text_field)) {
+            $this->setNonTextTypeValue($xpath, $value);
         } else {
-            element.value = expected_value;
-            if (element.type == 'text' || element.tagName == 'textarea') {
-                trigger_blur = false;
-                result = 2;
+            $current_value = $this->getValue($xpath);
+            $this->runScriptOnXpathElement($xpath, 'element.focus()');
+            for ($i = 0; $i < strlen($current_value); $i++) {
+                $this->page->send('Input.dispatchKeyEvent',
+                    ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8]);
+                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+                $this->page->send('Input.dispatchKeyEvent',
+                    ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 46, 'windowsVirtualKeyCode' => 46]);
+                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
-        }
-        if (trigger_change) {
-            var change = document.createEvent("Events");
-            change.initEvent("change", true, true);
-            element.dispatchEvent(change)
-        }
-        if (trigger_blur) {
-            element.blur();
+            for ($i = 0; $i < strlen($value); $i++) {
+                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => substr($value, $i, 1)]);
+                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+            }
+            $this->runScriptOnXpathElement($xpath, 'element.blur();');
         }
     }
-    result
-JS;
 
-        $result = $this->runScript($expression)['result'];
-
-        if ($result['type'] === 'number') {
-            if ($result['value'] == 1) {
-                throw new ElementNotFoundException($this, null, $xpath);
-            }
-            if ($result['value'] == 2) {
-                if (strlen($value) > 0) {
-                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8]);
-                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => substr($value, -1)]);
-                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+    /**
+     * @param $xpath
+     * @param $value
+     * @throws ElementNotFoundException
+     * @throws \Exception
+     */
+    private function setNonTextTypeValue($xpath, $value)
+    {
+        $json_value = ctype_digit($value) ? $value : json_encode($value);
+        $expression = <<<JS
+    var expected_value = $json_value;
+    var result = 0;
+    var trigger_change = true;
+    element.scrollIntoViewIfNeeded();
+    element.focus();
+    if (element.tagName == 'INPUT' && element.type == 'radio') {
+        var name = element.name
+        var fields = window.document.getElementsByName(name),
+            i, l = fields.length;
+        for (i = 0; i < l; i++) {
+            var field = fields.item(i);
+            if (field.form === element.form) {
+                if (field.value === expected_value) {
+                    field.checked = true;
+                } else {
+                    field.checked = false;
                 }
             }
-        } elseif ($result['type'] == 'error') {
-            throw new \Exception($result['description']);
         }
+    } else if (element.tagName == 'INPUT' && element.type == 'checkbox') {
+        if (element.checked != expected_value) {
+            element.click();
+        }
+        trigger_change = false;
+    } else if (element.tagName == 'SELECT') {
+        if (element.multiple && typeof expected_value != 'object') {
+            expected_value = [expected_value]
+        }
+        for (var i = 0; i < element.options.length; i++) {
+            if ((element.multiple && expected_value.includes(element.options[i].value)) || element.options[i].value == expected_value) {
+                element.options[i].selected = true;
+            } else {
+                element.options[i].selected = false;
+            }
+        }
+    } else if (element.tagName == 'INPUT' && element.type == 'file') {
+    } else {
+        element.value = expected_value
+    }
+    if (trigger_change) {
+        var change = document.createEvent("Events");
+        change.initEvent("change", true, true);
+        element.dispatchEvent(change)
+    }
+    element.blur();
+    null
+JS;
+
+        $result = $this->runScriptOnXpathElement($xpath, $expression);
     }
 
     /**
