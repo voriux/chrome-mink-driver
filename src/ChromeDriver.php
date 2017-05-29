@@ -755,7 +755,7 @@ JS;
     if (element.tagName == 'OPTION') {
         element = element.parentNode
     }
-    element.offsetWidth > 0 && element.offsetHeight > 0;
+    element.offsetHeight > 0 || element.offsetParent != null;
 JS;
 
         return $this->runScriptOnXpathElement($xpath, $script);
