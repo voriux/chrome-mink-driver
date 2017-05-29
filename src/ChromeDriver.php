@@ -670,30 +670,25 @@ JS;
         list($left, $top) = $this->getCoordinatesForXpath($xpath);
         $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
-        $can_click_script = "document.elementFromPoint({$left}, {$top}) == element && element.form == null;";
-        $can_click = $this->runScriptOnXpathElement($xpath, $can_click_script);
-        if ($can_click) {
-            $parameters = [
-                'type' => 'mousePressed',
-                'x' => $left + 1,
-                'y' => $top + 1,
-                'button' => 'left',
-                'timestamp' => time(),
-                'clickCount' => 1,
-            ];
-            $this->page->send('Input.dispatchMouseEvent', $parameters);
-            $parameters = [
-                'type' => 'mouseReleased',
-                'x' => $left + 1,
-                'y' => $top + 1,
-                'button' => 'left',
-                'timestamp' => time(),
-                'clickCount' => 1,
-            ];
-            $this->page->send('Input.dispatchMouseEvent', $parameters);
-        } else {
-            $this->runScriptOnXpathElement($xpath, 'element.click()');
-        }
+        $parameters = [
+            'type' => 'mousePressed',
+            'x' => $left + 5,
+            'y' => $top + 5,
+            'button' => 'left',
+            'timestamp' => time(),
+            'clickCount' => 1,
+        ];
+        $this->page->send('Input.dispatchMouseEvent', $parameters);
+        $parameters = [
+            'type' => 'mouseReleased',
+            'x' => $left + 5,
+            'y' => $top + 5,
+            'button' => 'left',
+            'timestamp' => time(),
+            'clickCount' => 1,
+        ];
+        $this->page->send('Input.dispatchMouseEvent', $parameters);
+        usleep(5000);
         $this->waitForDom();
     }
 
