@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 2.1.1
+
+* Fixed compatibility with 5.6 and 7.0
+
 ## 2.1.0
 
 * Added support for switching to popups which chrome turned opened as tabs
