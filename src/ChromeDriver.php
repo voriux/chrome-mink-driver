@@ -1072,7 +1072,7 @@ JS;
     {
         $xpath = addslashes($xpath);
         $xpath = str_replace("\n", '\\n', $xpath);
-        return "var xpath_result = document.evaluate(\"{$xpath}\", {$this->document});";
+        return "var xpath_result = document.evaluate(\"{$xpath}\", {$this->document}, null, XPathResult.ORDERED_NODE_ITERATOR_TYPE);";
     }
 
     protected function getElementProperty($xpath, $property)
