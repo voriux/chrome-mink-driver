@@ -634,7 +634,7 @@ JS;
                 if (strlen($value) > 0) {
                     $this->send('Input.dispatchKeyEvent', ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8]);
                     $this->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-                    $this->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $value[-1]]);
+                    $this->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => substr($value, -1)]);
                     $this->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
                 }
             }
