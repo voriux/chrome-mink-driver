@@ -41,6 +41,15 @@ class ChromePage extends DevToolsConnection
         $this->send('Page.reload');
     }
 
+    public function send($command, array $parameters = [])
+    {
+        if ($command == "Page.handleJavaScriptDialog") {
+            $this->has_javascript_dialog = false;
+        }
+
+        return parent::send($command, $parameters);
+    }
+
     public function waitForLoad()
     {
         if (!$this->page_ready) {
