@@ -559,7 +559,11 @@ JS;
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
             for ($i = 0; $i < strlen($value); $i++) {
-                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => substr($value, $i, 1)]);
+                $char = substr($value, $i, 1);
+                if ($char == "\n") {
+                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => chr(13)]);
+                }
+                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
             $this->runScriptOnXpathElement($xpath, 'element.blur();');
