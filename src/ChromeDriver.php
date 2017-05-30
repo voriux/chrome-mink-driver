@@ -566,7 +566,7 @@ JS;
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
-            $this->runScriptOnXpathElement($xpath, 'element.blur();');
+            $this->triggerEvent($xpath, 'change');
         }
     }
 
