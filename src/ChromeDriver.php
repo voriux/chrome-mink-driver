@@ -373,7 +373,8 @@ JS;
     public function getWindowNames()
     {
         $names = [];
-        foreach ($this->page->getTabs() as $tab) {
+        $tabs = (array)$this->page->getTabs();
+        foreach ($tabs as $tab) {
             $names[] = $tab['targetId'];
         }
         return $names;
