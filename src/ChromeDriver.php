@@ -675,13 +675,15 @@ JS;
         if ($this->runScriptOnXpathElement($xpath, 'element.tagName == "OPTION"')) {
             $this->setValue($xpath . '/..', $this->runScriptOnXpathElement($xpath, 'element.value'));
         } else {
-            list($left, $top) = $this->getCoordinatesForXpath($xpath);
+            list($left, $top, $width, $height) = $this->getCoordinatesForXpath($xpath);
+            $left = floor($left + ($width / 2));
+            $top = floor($top + ($height / 2));
             $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
             $parameters = [
                 'type' => 'mousePressed',
-                'x' => $left + 5,
-                'y' => $top + 5,
+                'x' => $left,
+                'y' => $top,
                 'button' => 'left',
                 'timestamp' => time(),
                 'clickCount' => 1,
@@ -689,8 +691,8 @@ JS;
             $this->page->send('Input.dispatchMouseEvent', $parameters);
             $parameters = [
                 'type' => 'mouseReleased',
-                'x' => $left + 5,
-                'y' => $top + 5,
+                'x' => $left,
+                'y' => $top,
                 'button' => 'left',
                 'timestamp' => time(),
                 'clickCount' => 1,
@@ -1103,13 +1105,11 @@ JS;
         $expression .= <<<JS
     var element = xpath_result.iterateNext();
     rect = element.getBoundingClientRect();
-    [rect.left, rect.top]
+    [rect.left, rect.top, rect.width, rect.height]
 JS;
 
-        list($left, $top) = $this->evaluateScript($expression);
-        $left = round($left + 1);
-        $top = round($top + 1);
-        return array($left, $top);
+        list($left, $top, $width, $height) = $this->evaluateScript($expression);
+        return [ceil($left), ceil($top), floor($width), floor($height)];
     }
 
     /**
