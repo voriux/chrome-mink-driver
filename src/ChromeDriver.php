@@ -899,7 +899,7 @@ JS;
                 break;
             }
             usleep(10000);
-        } while (true);
+        } while (!$this->page->hasJavascriptDialog());
         return (bool)$result;
     }
 
@@ -1164,8 +1164,6 @@ JS;
 
     protected function waitForDom()
     {
-        if (!$this->page->hasJavascriptDialog()) {
-            $this->wait(3000, 'document.readyState == "complete"');
-        }
+        $this->wait(3000, 'document.readyState == "complete"');
     }
 }
