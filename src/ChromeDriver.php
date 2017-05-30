@@ -88,11 +88,11 @@ class ChromeDriver extends CoreDriver
     public function stop()
     {
         try {
+            foreach ($this->getWindowNames() as $window_id) {
+                $this->http_client->get($this->api_url . '/json/close/' . $window_id);
+            }
             @$this->reset();
             $this->browser->close();
-            foreach ($this->page->getTabs() as $tab) {
-                $this->http_client->get($this->api_url . '/json/close/' . $tab['windowId']);
-            }
         } catch (ConnectionException $exception) {
         } catch (DriverException $exception) {
         }
