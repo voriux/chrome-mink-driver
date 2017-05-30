@@ -41,15 +41,6 @@ class ChromePage extends DevToolsConnection
         $this->send('Page.reload');
     }
 
-    public function send($command, array $parameters = [])
-    {
-        if ($command == "Page.handleJavaScriptDialog") {
-            $this->has_javascript_dialog = false;
-        }
-
-        return parent::send($command, $parameters);
-    }
-
     public function waitForLoad()
     {
         if (!$this->page_ready) {
@@ -103,6 +94,9 @@ class ChromePage extends DevToolsConnection
                 case 'Page.javascriptDialogOpening':
                     $this->has_javascript_dialog = true;
                     return true;
+                case 'Page.javascriptDialogClosed':
+                    $this->has_javascript_dialog = false;
+                    break;
                 case 'Network.requestWillBeSent':
                     if ($data['params']['type'] == 'Document') {
                         $this->pending_requests[$data['params']['requestId']] = true;
