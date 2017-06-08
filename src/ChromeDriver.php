@@ -679,9 +679,28 @@ JS;
         if ($this->runScriptOnXpathElement($xpath, 'element.tagName == "OPTION"')) {
             $this->setValue($xpath . '/..', $this->runScriptOnXpathElement($xpath, 'element.value'));
         } else {
-            list($left, $top, $width, $height) = $this->getCoordinatesForXpath($xpath);
-            $left = floor($left + ($width / 2));
-            $top = floor($top + ($height / 2));
+            $escaped = addslashes($xpath);
+            $script = <<<JS
+(function() {
+    var rect = element.getBoundingClientRect();
+    var initialX = Math.floor(rect.left);
+    var initialY = Math.floor(rect.top);
+    var maxX = Math.floor(rect.left + rect.width);
+    var maxY = Math.floor(rect.top + rect.height);
+    for (x = initialX; x <= maxX; x++) {
+        for (y = initialY; y <= maxY; y++) {
+            var pointElement = document.elementFromPoint(x, y);
+            if (element === pointElement || element.contains(pointElement)) {
+                return [x, y];
+            }
+        }
+    }
+    throw new Error("Unable to find clickable coordinates for element at xpath '{$escaped}'");
+})();
+JS;
+
+            list($left, $top) = $this->runScriptOnXpathElement($xpath, $script);
+
             $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
             $parameters = [
