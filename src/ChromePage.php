@@ -114,9 +114,6 @@ class ChromePage extends DevToolsConnection
                         $this->response = $data['params']['response'];
                     }
                     break;
-                case 'Network.requestServedFromCache':
-                    unset($this->pending_requests[$data['params']['requestId']]);
-                    break;
                 case 'Network.loadingFailed':
                     if (array_key_exists($data['params']['requestId'], $this->pending_requests)) {
                         throw new DriverException("Failed to load page ". $data['params']['errorText']);
