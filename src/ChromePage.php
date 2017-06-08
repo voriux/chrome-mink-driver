@@ -127,6 +127,9 @@ class ChromePage extends DevToolsConnection
                 case 'Page.frameStoppedLoading':
                     $this->page_ready = true;
                     break;
+                case 'Inspector.targetCrashed':
+                    throw new DriverException('Browser crashed');
+                    break;
                 default:
                     continue;
             }
