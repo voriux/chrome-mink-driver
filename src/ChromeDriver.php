@@ -156,8 +156,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        $this->waitForDom();
-        return $this->evaluateScript('window.location.href');
+        return $this->page->getResponse()['url'];
     }
 
     /**
