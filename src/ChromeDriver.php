@@ -684,8 +684,8 @@ JS;
             $script = <<<JS
 (function() {
     var rect = element.getBoundingClientRect();
-    var initialX = Math.floor(rect.left);
-    var initialY = Math.floor(rect.top);
+    var initialX = Math.ceil(rect.left);
+    var initialY = Math.ceil(rect.top);
     var maxX = Math.floor(rect.left + rect.width);
     var maxY = Math.floor(rect.top + rect.height);
     for (x = initialX; x <= maxX; x++) {
