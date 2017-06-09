@@ -87,6 +87,14 @@ class ChromePage extends DevToolsConnection
     private function waitForHttpResponse()
     {
         if (null === $this->response) {
+            $parameters = ['expression' => 'document.readyState == "complete"'];
+            if ($this->send('Runtime.evaluate', $parameters)['result']['value']) {
+                return [
+                    'code' => 200,
+                    'headers' => [],
+                ];
+            }
+
             $this->waitFor(function () {
                 return null !== $this->response && count($this->pending_requests) == 0;
             });
