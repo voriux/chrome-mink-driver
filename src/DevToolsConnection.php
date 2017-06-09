@@ -65,12 +65,8 @@ abstract class DevToolsConnection
                 $response = $this->client->receive();
             } catch (ConnectionException $exception) {
                 $message = $exception->getMessage();
-                $stream_state = json_decode(substr($message, strpos($message, '{')), true);
-                if ($stream_state['timed_out'] == true && $stream_state['eof'] == false) {
-                    continue;
-                }
-
-                throw $exception;
+                $state = json_decode(substr($message, strpos($message, '{')), true);
+                throw new StreamReadException($state['eof'], $state['timed_out'], $state['blocked']);
             }
             if (is_null($response)) {
                 return null;
