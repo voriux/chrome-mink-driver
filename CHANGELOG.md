@@ -1,6 +1,32 @@
 Changelog
 =========
 
+## 2.2.0
+
+* Implemented isolation between multiple instances running against the same browser, if the browser is running with --headless
+
+* Fixed isVisible when an element only has children which are floating, fixed, or absolute
+
+* Fixed setValue on fields with limited length
+
+* Fixed getStatusCode and getResponseHeaders timing out when the page has been loaded before the websocket was opened
+
+* Fixed setValue for multibyte unicode
+
+* Fixed some elements not receiving click
+
+* Sped up animations and added sleep until they complete
+
+* Fixed timeout when page loading takes longer than 5 seconds
+
+* Fixed deadlock when a request fails
+
+* Fixed deadlock when chrome crashes
+
+* Fixed fields not showing autocomplete on setValue, due to unnecessary blur
+
+* Fixed fatal error when restarting without --headless
+
 ## 2.1.1
 
 * Fixed compatibility with 5.6 and 7.0
