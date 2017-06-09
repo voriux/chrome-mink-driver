@@ -565,6 +565,7 @@ JS;
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
+            usleep(5000);
             $this->triggerEvent($xpath, 'change');
         }
     }
