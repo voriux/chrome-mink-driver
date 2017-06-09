@@ -116,8 +116,8 @@ class ChromePage extends DevToolsConnection
                     }
                     break;
                 case 'Network.loadingFailed':
-                    if (array_key_exists($data['params']['requestId'], $this->pending_requests)) {
-                        throw new DriverException("Failed to load page ". $data['params']['errorText']);
+                    if ($data['params']['canceled']) {
+                        unset($this->pending_requests[$data['params']['requestId']]);
                     }
                     break;
                 case 'Page.frameNavigated':
