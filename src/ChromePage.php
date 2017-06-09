@@ -132,7 +132,9 @@ class ChromePage extends DevToolsConnection
                     throw new DriverException('Browser crashed');
                     break;
                 case 'Animation.animationStarted':
-                    usleep($data['params']['source']['duration'] * 10);
+                    if (!empty($data['params']['source']['duration'])) {
+                        usleep($data['params']['source']['duration'] * 10);
+                    }
                     break;
                 default:
                     continue;
