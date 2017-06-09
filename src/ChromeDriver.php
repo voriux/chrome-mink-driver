@@ -558,8 +558,8 @@ JS;
                 $this->page->send('Input.dispatchKeyEvent', $parameters);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
-            for ($i = 0; $i < strlen($value); $i++) {
-                $char = substr($value, $i, 1);
+            for ($i = 0; $i < mb_strlen($value); $i++) {
+                $char = mb_substr($value, $i, 1);
                 if ($char == "\n") {
                     $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => chr(13)]);
                 }
