@@ -88,11 +88,13 @@ class ChromePage extends DevToolsConnection
     {
         if (null === $this->response) {
             $parameters = ['expression' => 'document.readyState == "complete"'];
-            if ($this->send('Runtime.evaluate', $parameters)['result']['value']) {
-                return [
+            $domReady = $this->send('Runtime.evaluate', $parameters)['result']['value'];
+            if (count($this->pending_requests) == 0 && $domReady) {
+                $this->response = [
                     'code' => 200,
                     'headers' => [],
                 ];
+                return;
             }
 
             $this->waitFor(function () {
