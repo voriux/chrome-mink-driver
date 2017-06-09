@@ -550,11 +550,11 @@ JS;
             $current_value = $this->getValue($xpath);
             $this->runScriptOnXpathElement($xpath, 'element.focus()');
             for ($i = 0; $i < strlen($current_value); $i++) {
-                $this->page->send('Input.dispatchKeyEvent',
-                    ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8]);
+                $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8];
+                $this->page->send('Input.dispatchKeyEvent', $parameters);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-                $this->page->send('Input.dispatchKeyEvent',
-                    ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 46, 'windowsVirtualKeyCode' => 46]);
+                $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 46, 'windowsVirtualKeyCode' => 46];
+                $this->page->send('Input.dispatchKeyEvent', $parameters);
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
             for ($i = 0; $i < strlen($value); $i++) {
