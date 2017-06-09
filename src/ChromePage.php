@@ -55,6 +55,10 @@ class ChromePage extends DevToolsConnection
                 $this->waitFor(function () {
                     return $this->page_ready;
                 });
+            } catch (StreamReadException $exception) {
+                if (!$exception->isEof() && $exception->isTimedOut()) {
+                    $this->waitForLoad();
+                }
             } catch (ConnectionException $exception) {
                 throw new DriverException("Page not loaded");
             }
