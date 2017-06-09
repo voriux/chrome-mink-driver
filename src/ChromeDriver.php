@@ -853,13 +853,13 @@ JS;
     public function dragTo($sourceXpath, $destinationXpath)
     {
         list($left, $top) = $this->getCoordinatesForXpath($sourceXpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
-        $parameters = ['type' => 'mousePressed', 'x' => $left, 'y' => $top, 'button' => 'left'];
+        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
+        $parameters = ['type' => 'mousePressed', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
         $this->page->send('Input.dispatchMouseEvent', $parameters);
 
         list($left, $top) = $this->getCoordinatesForXpath($destinationXpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
-        $parameters = ['type' => 'mouseReleased', 'x' => $left, 'y' => $top, 'button' => 'left'];
+        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
+        $parameters = ['type' => 'mouseReleased', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
         $this->page->send('Input.dispatchMouseEvent', $parameters);
     }
 
