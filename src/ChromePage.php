@@ -91,7 +91,7 @@ class ChromePage extends DevToolsConnection
             $domReady = $this->send('Runtime.evaluate', $parameters)['result']['value'];
             if (count($this->pending_requests) == 0 && $domReady) {
                 $this->response = [
-                    'code' => 200,
+                    'status' => 200,
                     'headers' => [],
                 ];
                 return;
