@@ -21,6 +21,8 @@ class ChromePage extends DevToolsConnection
         $this->send('Page.enable');
         $this->send('DOM.enable');
         $this->send('Network.enable');
+        $this->send('Animation.enable');
+        $this->send('Animation.setPlaybackRate', ['playbackRate' => 100000]);
     }
 
     public function reset()
@@ -128,6 +130,9 @@ class ChromePage extends DevToolsConnection
                     break;
                 case 'Inspector.targetCrashed':
                     throw new DriverException('Browser crashed');
+                    break;
+                case 'Animation.animationStarted':
+                    usleep($data['params']['source']['duration'] * 10);
                     break;
                 default:
                     continue;
