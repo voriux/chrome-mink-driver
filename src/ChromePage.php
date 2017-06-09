@@ -31,7 +31,6 @@ class ChromePage extends DevToolsConnection
     public function visit($url)
     {
         if (count($this->pending_requests) > 0) {
-            var_dump($this->pending_requests);
             $this->waitFor(function () {
                 return count($this->pending_requests) == 0;
             });
