@@ -696,34 +696,38 @@ JS;
             }
         }
     }
-    throw new Error("Unable to find clickable coordinates for element at xpath '{$escaped}'");
+    element.click();
+    return null;
 })();
 JS;
 
-            list($left, $top) = $this->runScriptOnXpathElement($xpath, $script);
+            $result = $this->runScriptOnXpathElement($xpath, $script);
 
-            $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
+            if ($result !== null) {
+                list($left, $top) = $result;
+                $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
 
-            $parameters = [
-                'type' => 'mousePressed',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time(),
-                'clickCount' => 1,
-            ];
-            $this->page->send('Input.dispatchMouseEvent', $parameters);
-            $parameters = [
-                'type' => 'mouseReleased',
-                'x' => $left,
-                'y' => $top,
-                'button' => 'left',
-                'timestamp' => time(),
-                'clickCount' => 1,
-            ];
-            $this->page->send('Input.dispatchMouseEvent', $parameters);
-            usleep(5000);
-            $this->waitForDom();
+                $parameters = [
+                    'type' => 'mousePressed',
+                    'x' => $left,
+                    'y' => $top,
+                    'button' => 'left',
+                    'timestamp' => time(),
+                    'clickCount' => 1,
+                ];
+                $this->page->send('Input.dispatchMouseEvent', $parameters);
+                $parameters = [
+                    'type' => 'mouseReleased',
+                    'x' => $left,
+                    'y' => $top,
+                    'button' => 'left',
+                    'timestamp' => time(),
+                    'clickCount' => 1,
+                ];
+                $this->page->send('Input.dispatchMouseEvent', $parameters);
+                usleep(5000);
+                $this->waitForDom();
+            }
         }
     }
 
