@@ -544,7 +544,7 @@ JS;
      */
     public function setValue($xpath, $value)
     {
-        $is_text_field = "(element.tagName == 'INPUT' && element.type == 'text') || element.tagName == 'TEXTAREA'";
+        $is_text_field = "(element.tagName == 'INPUT' && (element.type == 'text' || element.type == 'search')) || element.tagName == 'TEXTAREA'";
         if (!$this->runScriptOnXpathElement($xpath, $is_text_field)) {
             $this->setNonTextTypeValue($xpath, $value);
         } else {
