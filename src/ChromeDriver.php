@@ -942,7 +942,28 @@ JS;
      */
     public function resizeWindow($width, $height, $name = null)
     {
+        $this->setVisibleSize($width, $height);
         $this->executeScript("window.innerWidth = $width;window.innerHeight = $height;");
+    }
+
+    /**
+     * Sets the browser window size.
+     *
+     * @param int $width Set the window width, measured in pixels
+     * @param int $height Set the window height, measured in pixels
+     */
+    public function setVisibleSize($width, $height) {
+        $this->page->send('Emulation.setDeviceMetricsOverride', [
+            'width'             => $width,
+            'height'            => $height,
+            'deviceScaleFactor' => 0,
+            'mobile'            => false,
+            'fitWindow'         => false,
+        ]);
+        $this->page->send('Emulation.setVisibleSize', [
+            'width'  => $width,
+            'height' => $height,
+        ]);
     }
 
     /**
