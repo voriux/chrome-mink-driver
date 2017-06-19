@@ -678,7 +678,7 @@ JS;
         $this->mouseOver($xpath);
 
         if ($this->runScriptOnXpathElement($xpath, 'element.tagName == "OPTION"')) {
-            $this->setValue($xpath . '/..', $this->runScriptOnXpathElement($xpath, 'element.value'));
+            $this->setValue($xpath . '/ancestor::select[1]', $this->runScriptOnXpathElement($xpath, 'element.value'));
         } else {
             $escaped = addslashes($xpath);
             $script = <<<JS
