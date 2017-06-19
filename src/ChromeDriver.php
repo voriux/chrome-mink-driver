@@ -908,7 +908,7 @@ JS;
             if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
                 return $this->evaluateScript('(function() {' . $script . '}());');
             }
-            throw new \Exception($result['description']);
+            throw new DriverException($result['description']);
         }
 
         if ($result['type'] == 'object' && array_key_exists('subtype', $result)) {
