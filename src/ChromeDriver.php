@@ -567,7 +567,14 @@ JS;
                 $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
             }
             usleep(5000);
-            $this->triggerEvent($xpath, 'change');
+
+            try {
+                $this->triggerEvent($xpath, 'change');
+            } catch (ElementNotFoundException $e) {
+                // Ignore, sometimes input elements can get hidden after they are modified.
+                // For example, editing a title inline and sending a newline character at the end
+                // which submits the inline edit and saves the changes.
+            }
         }
     }
 
