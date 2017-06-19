@@ -787,9 +787,15 @@ JS;
     {
         $script = <<<JS
     if (element.tagName == 'OPTION') {
-        element = element.parentNode
+        element = element.closest('select');
     }
-    element.offsetHeight > 0 || element.offsetParent != null;
+    if (!(element.offsetHeight > 0 || element.offsetParent != null)) {
+        return false;
+    }
+    element.scrollIntoViewIfNeeded();
+    var rec = element.getBoundingClientRect();
+
+    return !(rec.right < 0 || rec.bottom < 0 || window.getComputedStyle(element).visibility == "hidden");
 JS;
 
         return $this->runScriptOnXpathElement($xpath, $script);
