@@ -908,7 +908,10 @@ JS;
             if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
                 return $this->evaluateScript('(function() {' . $script . '}());');
             }
-            throw new \Exception($result['description']);
+            if (preg_match('/Cannot read property .document. of null/', $result['description']) === 1) {
+                throw new NoSuchFrameException('The iframe no longer exists');
+            }
+            throw new DriverException($result['description']);
         }
 
         if ($result['type'] == 'object' && array_key_exists('subtype', $result)) {
