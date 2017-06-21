@@ -237,6 +237,21 @@ class ChromeDriver extends CoreDriver
                 }
             } catch (\Exception $e) {
             }
+            try {
+                // Last effort, connect to each window and compare its window name.
+                $currentWindow = $this->getCurrentWindow();
+                foreach ($this->page->getTabs() as $tab) {
+                    $this->connectToWindow($tab['targetId']);
+                    $windowName = $this->evaluateScript('window.name');
+
+                    if ($windowName === $name) {
+                        return;
+                    }
+                }
+                // Failed to find it, try to reconnect to the original window.
+                $this->connectToWindow($currentWindow);
+            } catch (\Exception $e) {
+            }
 
             throw new DriverException("Couldn't find window {$name}");
         }
