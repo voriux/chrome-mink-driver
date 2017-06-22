@@ -81,7 +81,13 @@ class ChromePage extends DevToolsConnection
 
     public function getTabs()
     {
-        return $this->send('Target.getTargets')['targetInfos'];
+        $tabs = [];
+        foreach ($this->send('Target.getTargets')['targetInfos'] as $tab) {
+            if ($tab['type'] == 'page') {
+                $tabs[] = $tab;
+            }
+        }
+        return array_reverse($tabs, true);
     }
 
     private function waitForHttpResponse()
