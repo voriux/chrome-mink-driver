@@ -1,6 +1,30 @@
 Changelog
 =========
 
+## 2.3.0
+
+* Fixed getWindowNames incompatibility with Selenium2Driver
+
+* Fixed mouseover sometimes moving the mouse outside the element - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Fixed inability to switchToWindow for some tabs which were opened with window.open() -  [Mark Nielsen](https://gitlab.com/polothy)
+
+* Throw DriverException instead of \Exception - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Throw NoSuchFrameException instead of generic \Exception when the frame is removed after being switched to - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Fixed clicking on an option tag which is inside an optgroup - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Fixed isVisible when the element is hidden using negative offsets or 'visibility: hidden' - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Fixed NoSuchElement exception when textbox is removed by javascript onchange - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Fixed browser resizing - [Mark Nielsen](https://gitlab.com/polothy)
+
+* Added support for setting the value of a input type="search" - [Raphaël Droz](https://gitlab.com/drzraf)
+
+* Added support for setting the value of an element with contenteditable=true - [Mark Nielsen](https://gitlab.com/polothy)
+
 ## 2.2.0
 
 * Implemented isolation between multiple instances running against the same browser, if the browser is running with --headless
