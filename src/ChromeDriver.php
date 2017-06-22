@@ -838,7 +838,7 @@ JS;
     {
         $this->runScriptOnXpathElement($xpath, 'element.scrollIntoViewIfNeeded()');
         list($left, $top) = $this->getCoordinatesForXpath($xpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
+        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
     }
 
     /**
