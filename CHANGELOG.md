@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 2.3.1
+
+* Fixed 'Server sent invalid upgrade response' when switching windows, in some cases
+
 ## 2.3.0
 
 * Fixed getWindowNames incompatibility with Selenium2Driver

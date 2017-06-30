@@ -1228,6 +1228,7 @@ JS;
 
     /**
      * @param $window_id
+     * @throws DriverException
      */
     protected function connectToWindow($window_id)
     {
@@ -1235,10 +1236,20 @@ JS;
             return;
         }
 
-        $this->page = new ChromePage($this->ws_url . '/devtools/page/' . $window_id);
-        $this->page->connect();
-        $this->current_window = $window_id;
-        $this->document = 'document';
+        $debuggerUrl = null;
+        $windows = json_decode($this->http_client->get($this->api_url . '/json/list'), true);
+
+        foreach ($windows as $window) {
+            if ($window['id'] == $window_id) {
+                $this->page = new ChromePage($window['webSocketDebuggerUrl']);
+                $this->page->connect();
+                $this->current_window = $window_id;
+                $this->document = 'document';
+                return;
+            }
+        }
+
+        throw new DriverException('No such window ' . $window_id);
     }
 
     protected function sendRequestHeaders()
