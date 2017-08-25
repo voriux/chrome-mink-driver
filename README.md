@@ -47,7 +47,7 @@ use DMore\ChromeDriver\ChromeDriver;
 use Selenium\Client as SeleniumClient;
 
 $mink = new Mink(array(
-    'chrome' => new Session(new ChromeDriver("http://localhost:9222")),
+    'browser' => new Session(new ChromeDriver('http://localhost:9222', null, 'http://www.google.com'))
 ));
 
 ```
