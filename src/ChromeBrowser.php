@@ -38,6 +38,13 @@ class ChromeBrowser extends DevToolsConnection
     {
         if ($this->headless) {
             try {
+                $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
+                // handling chrome versions 62+ where Target.createBrowserContext moved to new location
+                if(property_exists($versionInfo, 'webSocketDebuggerUrl')) {
+                    $debugUrl = $versionInfo->webSocketDebuggerUrl;
+                    $this->connect($debugUrl);
+                }
+
                 $this->context_id = $this->send('Target.createBrowserContext')['browserContextId'];
                 $data = $this->send('Target.createTarget',
                     ['url' => 'about:blank', 'browserContextId' => $this->context_id]);

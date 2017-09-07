@@ -15,7 +15,7 @@ class ChromePage extends DevToolsConnection
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
 
-    public function connect()
+    public function connect($url = null)
     {
         parent::connect();
         $this->send('Page.enable');
