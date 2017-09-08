@@ -52,6 +52,30 @@ $mink = new Mink(array(
 
 ```
 
+Since Chrome 62+ there is the experimental option to allow file downloads which can be triggered with options being
+passed to the ChromeDriver
+
+| Option           | Value                                        |
+|------------------|----------------------------------------------|
+| downloadBehavior | allow, default, deny                         |
+| downloadPath     | e.g. /tmp/ (/tmp/ is the default             |
+
+Usage:
+
+```php
+use Behat\Mink\Mink;
+use Behat\Mink\Session;
+use DMore\ChromeDriver\ChromeDriver;
+
+use Selenium\Client as SeleniumClient;
+
+$mink = new Mink(array(
+    'chrome' => new Session(new ChromeDriver('http://localhost:9222', null, 'http://www.google.com', ['downloadBehavior' => 'allow', 'downloadPath' => '/tmp/'])),
+));
+
+```
+
+
 ## Behat
 
 See [the behat extension](https://gitlab.com/DMore/behat-chrome-extension) if you want to use this driver with behat.
