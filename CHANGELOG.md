@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## 2.4.0
+
+* Fixed support for Chrome 62 - [Peter Rehm](https://gitlab.com/peterrehm)
+
+* Implemented download behavior (Chrome 62+ only)  - [Peter Rehm](https://gitlab.com/peterrehm)
+
 ## 2.3.1
 
 * Fixed 'Server sent invalid upgrade response' when switching windows, in some cases
