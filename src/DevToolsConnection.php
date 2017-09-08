@@ -23,7 +23,7 @@ abstract class DevToolsConnection
     {
         $url = $url == null ? $this->url : $url;
         $options = ['fragment_size' => 2000000]; # Chrome closes the connection if a message is sent in fragments
-        $this->client = new Client($url ?? $this->url, $options);
+        $this->client = new Client($url, $options);
     }
 
     public function close()
