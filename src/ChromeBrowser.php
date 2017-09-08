@@ -51,7 +51,7 @@ class ChromeBrowser extends DevToolsConnection
                 $this->send('Target.activateTarget', ['targetId' => $data['targetId']]);
                 return $data['targetId'];
             } catch (DriverException $exception) {
-                if ($exception->getCode() == '-32601') {
+                if ($exception->getCode() == '-32601' || $exception->getCode() == '-32000') {
                     $this->headless = false;
                     return $this->start();
                 } else {
