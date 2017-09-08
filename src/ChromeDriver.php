@@ -32,6 +32,10 @@ class ChromeDriver extends CoreDriver
      * Can either be 'document' or valid javascript for an iframe's javascript
      */
     private $document = 'document';
+    /**
+     * @var array
+     */
+    private $options;
 
     /**
      * ChromeDriver constructor.
@@ -39,7 +43,7 @@ class ChromeDriver extends CoreDriver
      * @param HttpClient $http_client
      * @param $base_url
      */
-    public function __construct($api_url = 'http://localhost:9222', HttpClient $http_client = null, $base_url)
+    public function __construct($api_url = 'http://localhost:9222', HttpClient $http_client = null, $base_url, $options = [])
     {
         if ($http_client == null) {
             $http_client = new HttpClient();
@@ -51,6 +55,24 @@ class ChromeDriver extends CoreDriver
         $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser');
         $this->browser->setHttpClient($http_client);
         $this->browser->setHttpUri($api_url);
+        $this->options = $this->verifyOptions($options);
+    }
+
+    private function verifyOptions($options)
+    {
+        $allowedOptions = ['downloadBehavior', 'downloadPath'];
+
+        if ($diff = array_diff(array_keys($options), $allowedOptions)) {
+            throw new \InvalidArgumentException(
+                sprintf(
+                    'The unknown option(s) "%s" has been provided. Valid options are "%s".',
+                    implode(',', $diff),
+                    implode(',', $allowedOptions)
+                )
+            );
+        }
+
+        return $options;
     }
 
     public function start()
@@ -59,6 +81,11 @@ class ChromeDriver extends CoreDriver
         $this->main_window = $this->browser->start();
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
+
+        if (isset($this->options['downloadBehavior'])) {
+            $path = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
+            $this->page->send('Page.setDownloadBehavior', ['behavior' => $this->options['downloadBehavior'], 'downloadPath' => $path]);
+        }
     }
 
     /**
