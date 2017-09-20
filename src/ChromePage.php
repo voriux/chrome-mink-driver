@@ -159,8 +159,10 @@ class ChromePage extends DevToolsConnection
                     }
                     break;
                 case 'Security.certificateError':
-                    $this->send('Security.handleCertificateError', ['eventId' => $data['params']['eventId'], 'action' => 'continue']);
-                    $this->page_ready = false;
+                    if (isset($data['params']['eventId'])) {
+                        $this->send('Security.handleCertificateError', ['eventId' => $data['params']['eventId'], 'action' => 'continue']);
+                        $this->page_ready = false;
+                    }
                     break;
                 default:
                     continue;
