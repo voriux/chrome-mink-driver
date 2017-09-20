@@ -156,6 +156,12 @@ class ChromePage extends DevToolsConnection
                         usleep($data['params']['source']['duration'] * 10);
                     }
                     break;
+                case 'Security.certificateError':
+                    if (isset($data['params']['eventId'])) {
+                        $this->send('Security.handleCertificateError', ['eventId' => $data['params']['eventId'], 'action' => 'continue']);
+                        $this->page_ready = false;
+                    }
+                    break;
                 default:
                     continue;
             }
