@@ -22,8 +22,6 @@ class ChromePage extends DevToolsConnection
         $this->send('DOM.enable');
         $this->send('Network.enable');
         $this->send('Animation.enable');
-        $this->send('Security.enable');
-        $this->send('Security.setOverrideCertificateErrors', ['override' => true]);
         $this->send('Animation.setPlaybackRate', ['playbackRate' => 100000]);
     }
 
