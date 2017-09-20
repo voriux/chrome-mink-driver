@@ -22,6 +22,8 @@ class ChromePage extends DevToolsConnection
         $this->send('DOM.enable');
         $this->send('Network.enable');
         $this->send('Animation.enable');
+        $this->send('Security.enable');
+        $this->send('Security.setOverrideCertificateErrors', ['override' => true]);
         $this->send('Animation.setPlaybackRate', ['playbackRate' => 100000]);
     }
 
@@ -155,6 +157,10 @@ class ChromePage extends DevToolsConnection
                     if (!empty($data['params']['source']['duration'])) {
                         usleep($data['params']['source']['duration'] * 10);
                     }
+                    break;
+                case 'Security.certificateError':
+                    $this->send('Security.handleCertificateError', ['eventId' => $data['params']['eventId'], 'action' => 'continue']);
+                    $this->page_ready = false;
                     break;
                 default:
                     continue;

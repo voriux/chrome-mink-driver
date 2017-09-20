@@ -32,7 +32,7 @@ abstract class DevToolsConnection
     }
 
     /**
-     * @param array $command
+     * @param string $command
      * @param array $parameters
      * @return null|string
      * @throws \Exception
