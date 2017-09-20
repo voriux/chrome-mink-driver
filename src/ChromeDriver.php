@@ -60,7 +60,7 @@ class ChromeDriver extends CoreDriver
 
     private function verifyOptions($options)
     {
-        $allowedOptions = ['downloadBehavior', 'downloadPath'];
+        $allowedOptions = ['downloadBehavior', 'downloadPath', 'validateCertificate'];
 
         if ($diff = array_diff(array_keys($options), $allowedOptions)) {
             throw new \InvalidArgumentException(
@@ -85,6 +85,11 @@ class ChromeDriver extends CoreDriver
         if (isset($this->options['downloadBehavior'])) {
             $path = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
             $this->page->send('Page.setDownloadBehavior', ['behavior' => $this->options['downloadBehavior'], 'downloadPath' => $path]);
+        }
+
+        if (isset($this->options['validateCertificate']) && $this->options['validateCertificate'] === false) {
+            $this->page->send('Security.enable');
+            $this->page->send('Security.setOverrideCertificateErrors', ['override' => true]);
         }
     }
 
