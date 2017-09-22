@@ -4,6 +4,7 @@ namespace DMore\ChromeDriver;
 use Behat\Mink\Driver\CoreDriver;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\ElementNotFoundException;
+use Symfony\Component\OptionsResolver\OptionsResolver;
 use WebSocket\ConnectionException;
 
 class ChromeDriver extends CoreDriver
@@ -61,19 +62,10 @@ class ChromeDriver extends CoreDriver
 
     private function verifyOptions($options)
     {
-        $allowedOptions = ['downloadBehavior', 'downloadPath', 'validateCertificate'];
+        $resolver = new OptionsResolver();
+        $resolver->setDefined(['downloadBehavior', 'downloadPath', 'validateCertificate']);
 
-        if ($diff = array_diff(array_keys($options), $allowedOptions)) {
-            throw new \InvalidArgumentException(
-                sprintf(
-                    'The unknown option(s) "%s" has been provided. Valid options are "%s".',
-                    implode(',', $diff),
-                    implode(',', $allowedOptions)
-                )
-            );
-        }
-
-        return $options;
+        return $resolver->resolve($options);
     }
 
     public function start()
