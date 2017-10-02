@@ -48,7 +48,6 @@ class ChromeBrowser extends DevToolsConnection
                 $this->context_id = $this->send('Target.createBrowserContext')['browserContextId'];
                 $data = $this->send('Target.createTarget',
                     ['url' => 'about:blank', 'browserContextId' => $this->context_id]);
-                $this->send('Target.activateTarget', ['targetId' => $data['targetId']]);
                 return $data['targetId'];
             } catch (DriverException $exception) {
                 if ($exception->getCode() == '-32601' || $exception->getCode() == '-32000') {
