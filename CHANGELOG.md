@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 2.4.2
+
+* Removed dependency on symfony/options-resolver:3 due to conflicts with Symfony2 projects
+
 ## 2.4.1
 
 * Added support for enabling certificate override [Arturas Smorgun](https://gitlab.com/asarturas)
