@@ -33,8 +33,7 @@
     "require": {
         "ext-curl": "*",
         "textalk/websocket": "^1.2.0",
-        "behat/mink": "^1.7",
-        "symfony/options-resolver": "^3.3"
+        "behat/mink": "^1.7"
     },
     "extra": {
         "branch-alias": {
