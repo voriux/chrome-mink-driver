@@ -57,15 +57,7 @@ class ChromeDriver extends CoreDriver
         $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser');
         $this->browser->setHttpClient($http_client);
         $this->browser->setHttpUri($api_url);
-        $this->options = $this->verifyOptions($options);
-    }
-
-    private function verifyOptions($options)
-    {
-        $resolver = new OptionsResolver();
-        $resolver->setDefined(['downloadBehavior', 'downloadPath', 'validateCertificate']);
-
-        return $resolver->resolve($options);
+        $this->options = $options;
     }
 
     public function start()
