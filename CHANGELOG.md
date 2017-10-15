@@ -1,6 +1,12 @@
 Changelog
 =========
 
+## 2.4.1
+
+* Added support for enabling certificate override [Arturas Smorgun](https://gitlab.com/asarturas)
+
+* Fixed numeric passwords being treated as integers
+
 ## 2.4.0
 
 * Fixed support for Chrome 62 - [Peter Rehm](https://gitlab.com/peterrehm)
