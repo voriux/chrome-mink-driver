@@ -54,7 +54,7 @@ class ChromeDriver extends CoreDriver
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
-        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser');
+        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser', isset($options['socketTimeout']) ? $options['socketTimeout'] : null);
         $this->browser->setHttpClient($http_client);
         $this->browser->setHttpUri($api_url);
         $this->options = $options;
@@ -1258,7 +1258,7 @@ JS;
 
         foreach ($windows as $window) {
             if ($window['id'] == $window_id) {
-                $this->page = new ChromePage($window['webSocketDebuggerUrl']);
+                $this->page = new ChromePage($window['webSocketDebuggerUrl'], isset($this->options['socketTimeout']) ? $this->options['socketTimeout'] : null);
                 $this->page->connect();
                 $this->current_window = $window_id;
                 $this->document = 'document';
