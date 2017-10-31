@@ -13,16 +13,22 @@ abstract class DevToolsConnection
     private $command_id = 1;
     /** @var string */
     private $url;
+    /** @var int|null */
+    private $socket_timeout;
 
-    public function __construct($url)
+    public function __construct($url, $socket_timeout = null)
     {
         $this->url = $url;
+        $this->socket_timeout = $socket_timeout;
     }
 
     public function connect($url = null)
     {
         $url = $url == null ? $this->url : $url;
         $options = ['fragment_size' => 2000000]; # Chrome closes the connection if a message is sent in fragments
+        if (is_numeric($this->socket_timeout) && $this->socket_timeout > 0) {
+            $options['timeout'] = (int) $this->socket_timeout;
+        }
         $this->client = new Client($url, $options);
     }
 
