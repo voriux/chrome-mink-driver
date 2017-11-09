@@ -577,7 +577,7 @@ JS;
      */
     public function setValue($xpath, $value)
     {
-        $is_text_field = "(element.tagName == 'INPUT' && (element.type == 'text' || element.type == 'search' || element.type == 'password')) || element.tagName == 'TEXTAREA' || (element.hasAttribute('contenteditable') && element.getAttribute('contenteditable') != 'false')";
+        $is_text_field = "(element.tagName == 'INPUT' && (element.type == 'text' || element.type == 'search')) || element.tagName == 'TEXTAREA' || (element.hasAttribute('contenteditable') && element.getAttribute('contenteditable') != 'false')";
         if (!$this->runScriptOnXpathElement($xpath, $is_text_field)) {
             $this->setNonTextTypeValue($xpath, $value);
         } else {
@@ -620,6 +620,7 @@ JS;
     private function setNonTextTypeValue($xpath, $value)
     {
         $json_value = ctype_digit($value) ? $value : json_encode($value);
+        $text_value = json_encode($value);
         $expression = <<<JS
     var expected_value = $json_value;
     var result = 0;
@@ -657,6 +658,8 @@ JS;
             }
         }
     } else if (element.tagName == 'INPUT' && element.type == 'file') {
+    } else if (element.tagName == 'INPUT' && (element.type == 'password' || element.type == 'tel' || element.type == 'email' || element.type == 'url')) {
+        element.value = $text_value;
     } else {
         element.value = expected_value
     }
