@@ -75,10 +75,10 @@ $mink = new Mink(array(
 
 ```
 
-Besides the above mentioned download options the following options can be provided:
+Besides the above mentioned download options the following options can be provided
 
 | Option           | Value                     | Description                   |
-|------------------|-----------------------------------------------------------|
+|------------------|---------------------------|-------------------------------|
 | socketTimeout    | int, default: null        | Connection timeout            |
 
 ## Behat
