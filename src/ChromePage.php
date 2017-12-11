@@ -7,7 +7,7 @@ use WebSocket\ConnectionException;
 class ChromePage extends DevToolsConnection
 {
     /** @var array */
-    private $pending_requests;
+    private $pending_requests = [];
     /** @var bool */
     private $page_ready = true;
     /** @var bool */
