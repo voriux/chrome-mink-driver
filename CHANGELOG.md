@@ -1,6 +1,16 @@
 Changelog
 =========
 
+## 2.5
+
+* Added option for overriding socket timeout - [Matthew Hotchen](https://gitlab.com/mhotchen)
+
+## 2.4.3
+
+* Fixed compatibility with Chrome 61 - [Matthew Hotchen](https://gitlab.com/mhotchen)
+
+* PHP 7.2 compatibility - [Peter Rehm](https://gitlab.com/peterrehm)
+
 ## 2.4.2
 
 * Removed dependency on symfony/options-resolver:3 due to conflicts with Symfony2 projects
