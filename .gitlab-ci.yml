@@ -28,3 +28,7 @@ test 7.0:
 test 7.1:
   <<: *test_template
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.1
+
+test 7.2:
+  <<: *test_template
+  image: registry.gitlab.com/dmore/docker-chrome-headless:7.2
