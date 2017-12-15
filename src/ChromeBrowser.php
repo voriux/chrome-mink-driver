@@ -36,6 +36,23 @@ class ChromeBrowser extends DevToolsConnection
      */
     public function start()
     {
+        $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
+
+        // Detect if Chrome is running
+        if (null === $versionInfo) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Could not fetch version information from %s. Please check if Chrome is running.',
+                    $this->http_uri.'/json/version'
+                )
+            );
+        }
+
+        // Detect if Chrome has been started in Headless Mode
+        if(property_exists($versionInfo, 'Browser') && strpos($versionInfo->Browser, 'Headless') === false) {
+            $this->headless = false;
+        }
+
         if ($this->headless) {
             try {
                 $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
@@ -77,5 +94,10 @@ class ChromeBrowser extends DevToolsConnection
     protected function processResponse(array $data)
     {
         return false;
+    }
+
+    public function isHeadless()
+    {
+        return $this->headless;
     }
 }
