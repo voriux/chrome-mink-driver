@@ -69,7 +69,6 @@ class ChromeBrowser extends DevToolsConnection
             } catch (DriverException $exception) {
                 if ($exception->getCode() == '-32601' || $exception->getCode() == '-32000') {
                     $this->headless = false;
-                    return $this->start();
                 } else {
                     throw $exception;
                 }
