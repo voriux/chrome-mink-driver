@@ -344,7 +344,11 @@ JS;
             foreach ($this->page->send('Network.getAllCookies')['cookies'] as $cookie) {
                 if ($cookie['name'] == $name) {
                     $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
-                    $this->page->send('Network.deleteCookie', $parameters);
+                    if ($this->browser->getVersion() >= 64) {
+                        $this->page->send('Network.deleteCookies', $parameters);
+                    } else {
+                        $this->page->send('Network.deleteCookie', $parameters);
+                    }
                 }
             }
         } else {
