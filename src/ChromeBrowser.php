@@ -14,6 +14,8 @@ class ChromeBrowser extends DevToolsConnection
     private $http_client;
     /** @var string */
     private $http_uri;
+    /** @var string */
+    private $version;
 
     /**
      * @param HttpClient $client
@@ -46,6 +48,12 @@ class ChromeBrowser extends DevToolsConnection
                     $this->http_uri.'/json/version'
                 )
             );
+        }
+
+        // Detect Browser version
+        if(property_exists($versionInfo, 'Browser')) {
+            $start = strpos($versionInfo->Browser, '/') + 1;
+            $this->version = substr($versionInfo->Browser, $start, strpos($versionInfo->Browser, '.') - $start);
         }
 
         // Detect if Chrome has been started in Headless Mode
@@ -95,8 +103,20 @@ class ChromeBrowser extends DevToolsConnection
         return false;
     }
 
+
+    /**
+     * @return bool
+     */
     public function isHeadless()
     {
         return $this->headless;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersion()
+    {
+        return $this->version;
     }
 }
