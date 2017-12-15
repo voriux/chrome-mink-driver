@@ -635,6 +635,7 @@ JS;
             if (field.form === element.form) {
                 if (field.value === expected_value) {
                     field.checked = true;
+                    field.click();
                 } else {
                     field.checked = false;
                 }
