@@ -67,10 +67,16 @@ class ChromeDriver extends CoreDriver
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
 
-        $downloadBehavior = isset($this->options['downloadBehavior']) ? $this->options['downloadBehavior'] : 'default';
-        $downloadPath = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
-        if ($downloadBehavior !== 'default' || rtrim($downloadPath, '/') !== '/tmp') {
-            $this->page->send('Page.setDownloadBehavior', ['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]);
+        // Only set download options in headless mode
+        if (true === $this->browser->isHeadless()) {
+            $downloadBehavior = isset($this->options['downloadBehavior']) ? $this->options['downloadBehavior'] : 'default';
+            $downloadPath = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
+            if ($downloadBehavior !== 'default' || rtrim($downloadPath, '/') !== '/tmp') {
+                $this->page->send(
+                    'Page.setDownloadBehavior',
+                    ['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]
+                );
+            }
         }
 
         if (isset($this->options['validateCertificate']) && $this->options['validateCertificate'] === false) {
