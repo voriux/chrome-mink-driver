@@ -81,7 +81,7 @@ abstract class DevToolsConnection
             $data = json_decode($response, true);
 
             if (array_key_exists('error', $data)) {
-                throw new DriverException($data['error']['message'], $data['error']['code']);
+                throw new DriverException($data['error']['message'] . '. ' . $data['error']['data'] , $data['error']['code']);
             }
 
             if ($this->processResponse($data)) {
