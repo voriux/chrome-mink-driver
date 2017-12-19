@@ -317,7 +317,7 @@ JS;
     public function unsetRequestHeader($name)
     {
         if (array_key_exists($name, $this->request_headers)) {
-            unset($this->request_headers);
+            unset($this->request_headers[$name]);
             $this->sendRequestHeaders();
         }
     }
