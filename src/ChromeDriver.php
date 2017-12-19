@@ -343,10 +343,11 @@ JS;
         if ($value === null) {
             foreach ($this->page->send('Network.getAllCookies')['cookies'] as $cookie) {
                 if ($cookie['name'] == $name) {
-                    $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
                     if ($this->browser->getVersion() >= 64) {
+                        $parameters = ['name' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
                         $this->page->send('Network.deleteCookies', $parameters);
                     } else {
+                        $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
                         $this->page->send('Network.deleteCookie', $parameters);
                     }
                 }
