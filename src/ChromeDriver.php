@@ -343,7 +343,7 @@ JS;
         if ($value === null) {
             foreach ($this->page->send('Network.getAllCookies')['cookies'] as $cookie) {
                 if ($cookie['name'] == $name) {
-                    if ($this->browser->getVersion() >= 64) {
+                    if ($this->browser->getVersion() >= 63) {
                         $parameters = ['name' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
                         $this->page->send('Network.deleteCookies', $parameters);
                     } else {
@@ -1032,7 +1032,7 @@ JS;
      */
     public function maximizeWindow($name = null)
     {
-        $this->executeScript("window.innerWidth = screen.width;window.innerHeight = screen.height;");
+        $this->page->send('Browser.setWindowBounds', ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']]);
     }
 
     /**
