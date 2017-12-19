@@ -53,7 +53,7 @@ class ChromeBrowser extends DevToolsConnection
         // Detect Browser version
         if(property_exists($versionInfo, 'Browser')) {
             $start = strpos($versionInfo->Browser, '/') + 1;
-            $this->version = substr($versionInfo->Browser, $start, strpos($versionInfo->Browser, '.') - $start);
+            $this->version = (int) substr($versionInfo->Browser, $start, strpos($versionInfo->Browser, '.') - $start);
         }
 
         // Detect if Chrome has been started in Headless Mode
