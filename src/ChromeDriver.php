@@ -1344,8 +1344,8 @@ JS;
 
         $response = $this->page->send('Page.printToPDF', $options);
 
-        if (false === array_key_exists('data', $response) || false !== $pdfData = base64_decode($this->page->send('Page.printToPDF', $options)['data'])) {
-            throw new \Exception('PDF could not be parsed.');
+        if (false === array_key_exists('data', $response) || false === $pdfData = base64_decode($response['data'])) {
+            throw new \Exception('PDF could not be created.');
         }
 
         file_put_contents($filename, $pdfData);
