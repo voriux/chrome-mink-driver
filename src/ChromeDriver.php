@@ -1004,7 +1004,7 @@ JS;
     public function resizeWindow($width, $height, $name = null)
     {
         $this->setVisibleSize($width, $height);
-        $this->executeScript("window.innerWidth = $width;window.innerHeight = $height;");
+        $this->executeScript("window.outerWidth = $width;window.outerHeight = $height;");
     }
 
     /**
