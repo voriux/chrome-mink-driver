@@ -1032,11 +1032,13 @@ JS;
      */
     public function maximizeWindow($name = null)
     {
-        if (false === $this->browser->isHeadless()) {
+        if (true === $this->browser->isHeadless()) {
+            list($width, $height) = $this->evaluateScript('[screen.width, screen.height]');
+            $this->setVisibleSize($width, $height);
+        } else {
             $this->page->send('Browser.setWindowBounds', ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']]);
         }
-
-        $this->executeScript("window.innerWidth = screen.width;window.innerHeight = screen.height;");
+        $this->executeScript("window.outerWidth = screen.width;window.outerHeight = screen.height;");
     }
 
     /**
