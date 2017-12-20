@@ -79,9 +79,9 @@ Besides the above mentioned download options the following options can be provid
 |------------------|---------------------|-------------------------------|
 | socketTimeout    | int, default: 10    | Connection timeout in seconds |
 
-## Rendering PDF
+## Rendering PDF and Screenshots
 
-Despite the Mink functionality the driver supports printing PDF pages.
+Despite the Mink functionality the driver supports printing PDF pages or capturing a screenshot.
 
 Usage:
 
@@ -107,6 +107,8 @@ $driver->printToPdf('/tmp/readme.pdf');
 ```
 
 The available options are documented here: https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF
+
+You can capture a screenshot with the `captueScreenshot` method. Options are documented here.
 
 Please note, it is recommended to start Chrome with the disable-extensions flag like:
 
