@@ -1350,4 +1350,26 @@ JS;
 
         file_put_contents($filename, $pdfData);
     }
+
+    /**
+     * For more information see https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureScreenshot
+     *
+     * @param string $filename
+     * @param array $options
+     * @throws \Exception
+     */
+    public function captureScreenshot($filename, $options = [])
+    {
+        if (false === $this->browser->isHeadless()) {
+            throw new \RuntimeException('Page.captureScreenshot is only available in headless mode.');
+        }
+
+        $response = $this->page->send('Page.captureScreenshot', $options);
+
+        if (false === array_key_exists('data', $response) || false === $imageData = base64_decode($response['data'])) {
+            throw new \Exception('Screenshot could not be created.');
+        }
+
+        file_put_contents($filename, $imageData);
+    }
 }
