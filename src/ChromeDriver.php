@@ -54,7 +54,7 @@ class ChromeDriver extends CoreDriver
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
-        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser', isset($options['socketTimeout']) ? $options['socketTimeout'] : null);
+        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser', isset($options['socketTimeout']) ? $options['socketTimeout'] : 10);
         $this->browser->setHttpClient($http_client);
         $this->browser->setHttpUri($api_url);
         $this->options = $options;
