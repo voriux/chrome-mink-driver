@@ -582,7 +582,9 @@ JS;
             $this->setNonTextTypeValue($xpath, $value);
         } else {
             $current_value = $this->getValue($xpath);
-            $this->runScriptOnXpathElement($xpath, 'element.focus()');
+            if (!$this->runScriptOnXpathElement($xpath, 'if (element.offsetParent !== null)  { element.focus(); return true; } else { return false;  }')) {
+              throw new DriverException('Element is not visible and can not be focused');
+            }
             for ($i = 0; $i < strlen($current_value); $i++) {
                 $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8];
                 $this->page->send('Input.dispatchKeyEvent', $parameters);
