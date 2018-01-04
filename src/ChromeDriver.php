@@ -67,10 +67,16 @@ class ChromeDriver extends CoreDriver
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
 
-        $downloadBehavior = isset($this->options['downloadBehavior']) ? $this->options['downloadBehavior'] : 'default';
-        $downloadPath = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
-        if ($downloadBehavior !== 'default' || rtrim($downloadPath, '/') !== '/tmp') {
-            $this->page->send('Page.setDownloadBehavior', ['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]);
+        // Only set download options in headless mode
+        if (true === $this->browser->isHeadless()) {
+            $downloadBehavior = isset($this->options['downloadBehavior']) ? $this->options['downloadBehavior'] : 'default';
+            $downloadPath = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
+            if ($downloadBehavior !== 'default' || rtrim($downloadPath, '/') !== '/tmp') {
+                $this->page->send(
+                    'Page.setDownloadBehavior',
+                    ['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]
+                );
+            }
         }
 
         if (isset($this->options['validateCertificate']) && $this->options['validateCertificate'] === false) {
@@ -311,7 +317,7 @@ JS;
     public function unsetRequestHeader($name)
     {
         if (array_key_exists($name, $this->request_headers)) {
-            unset($this->request_headers);
+            unset($this->request_headers[$name]);
             $this->sendRequestHeaders();
         }
     }
@@ -337,8 +343,13 @@ JS;
         if ($value === null) {
             foreach ($this->page->send('Network.getAllCookies')['cookies'] as $cookie) {
                 if ($cookie['name'] == $name) {
-                    $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
-                    $this->page->send('Network.deleteCookie', $parameters);
+                    if ($this->browser->getVersion() >= 63) {
+                        $parameters = ['name' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
+                        $this->page->send('Network.deleteCookies', $parameters);
+                    } else {
+                        $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
+                        $this->page->send('Network.deleteCookie', $parameters);
+                    }
                 }
             }
         } else {
@@ -993,7 +1004,7 @@ JS;
     public function resizeWindow($width, $height, $name = null)
     {
         $this->setVisibleSize($width, $height);
-        $this->executeScript("window.innerWidth = $width;window.innerHeight = $height;");
+        $this->executeScript("window.outerWidth = $width;window.outerHeight = $height;");
     }
 
     /**
@@ -1021,7 +1032,13 @@ JS;
      */
     public function maximizeWindow($name = null)
     {
-        $this->executeScript("window.innerWidth = screen.width;window.innerHeight = screen.height;");
+        if (true === $this->browser->isHeadless()) {
+            list($width, $height) = $this->evaluateScript('[screen.width, screen.height]');
+            $this->setVisibleSize($width, $height);
+        } else {
+            $this->page->send('Browser.setWindowBounds', ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']]);
+        }
+        $this->executeScript("window.outerWidth = screen.width;window.outerHeight = screen.height;");
     }
 
     /**
