@@ -1,6 +1,14 @@
 Changelog
 =========
 
+## 2.6
+
+* Add click on radio element when selected - [Peter Rehm](https://gitlab.com/peterrehm)
+* Added support to capture screenshots and to render PDFs - [Peter Rehm](https://gitlab.com/peterrehm)
+* Socket timeout defaults now to 10 seconds - [Matthew Hotchen](https://gitlab.com/mhotchen)
+* Set pierce argument to TRUE if currently in an iframe  - [Sascha Grossenbacher](https://gitlab.com/saschagros)
+* Added verification if an element can be focused  - [Sascha Grossenbacher](https://gitlab.com/saschagros)
+
 ## 2.5
 
 * Added option for overriding socket timeout - [Matthew Hotchen](https://gitlab.com/mhotchen)
