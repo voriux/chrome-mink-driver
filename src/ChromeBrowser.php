@@ -14,6 +14,8 @@ class ChromeBrowser extends DevToolsConnection
     private $http_client;
     /** @var string */
     private $http_uri;
+    /** @var string */
+    private $version;
 
     /**
      * @param HttpClient $client
@@ -36,6 +38,29 @@ class ChromeBrowser extends DevToolsConnection
      */
     public function start()
     {
+        $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
+
+        // Detect if Chrome is running
+        if (null === $versionInfo) {
+            throw new \RuntimeException(
+                sprintf(
+                    'Could not fetch version information from %s. Please check if Chrome is running.',
+                    $this->http_uri.'/json/version'
+                )
+            );
+        }
+
+        // Detect Browser version
+        if(property_exists($versionInfo, 'Browser')) {
+            $start = strpos($versionInfo->Browser, '/') + 1;
+            $this->version = (int) substr($versionInfo->Browser, $start, strpos($versionInfo->Browser, '.') - $start);
+        }
+
+        // Detect if Chrome has been started in Headless Mode
+        if(property_exists($versionInfo, 'Browser') && strpos($versionInfo->Browser, 'Headless') === false) {
+            $this->headless = false;
+        }
+
         if ($this->headless) {
             try {
                 $versionInfo = json_decode($this->http_client->get($this->http_uri . '/json/version'));
@@ -52,7 +77,6 @@ class ChromeBrowser extends DevToolsConnection
             } catch (DriverException $exception) {
                 if ($exception->getCode() == '-32601' || $exception->getCode() == '-32000') {
                     $this->headless = false;
-                    return $this->start();
                 } else {
                     throw $exception;
                 }
@@ -77,5 +101,22 @@ class ChromeBrowser extends DevToolsConnection
     protected function processResponse(array $data)
     {
         return false;
+    }
+
+
+    /**
+     * @return bool
+     */
+    public function isHeadless()
+    {
+        return $this->headless;
+    }
+
+    /**
+     * @return string
+     */
+    public function getVersion()
+    {
+        return $this->version;
     }
 }
