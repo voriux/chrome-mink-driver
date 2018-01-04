@@ -798,7 +798,10 @@ JS;
         $name = $this->runScriptOnXpathElement($xpath, $script, 'file input');
 
         $node_id = null;
-        foreach ($this->page->send('DOM.getFlattenedDocument')['nodes'] as $element) {
+        $parameters = [
+          'pierce' => $this->document !== 'document',
+        ];
+        foreach ($this->page->send('DOM.getFlattenedDocument', $parameters)['nodes'] as $element) {
             if (!empty($element['attributes'])) {
                 $num_attributes = count($element['attributes']);
                 for ($key = 0; $key < $num_attributes; $key += 2) {
