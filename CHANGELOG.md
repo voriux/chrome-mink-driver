@@ -8,6 +8,7 @@ Changelog
 * Socket timeout defaults now to 10 seconds - [Matthew Hotchen](https://gitlab.com/mhotchen)
 * Set pierce argument to TRUE if currently in an iframe  - [Sascha Grossenbacher](https://gitlab.com/saschagros)
 * Added verification if an element can be focused  - [Sascha Grossenbacher](https://gitlab.com/saschagros)
+* Fixed password fields not being focused before key presses
 
 ## 2.5
 
