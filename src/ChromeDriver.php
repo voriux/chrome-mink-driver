@@ -1303,4 +1303,78 @@ JS;
         $this->wait(3000, 'document.readyState == "complete"');
         $this->page->waitForLoad();
     }
+
+    /**
+     * For more information see https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF
+     *
+     * @param string $filename
+     * @param bool   $landscape
+     * @param bool   $displayHeaderFooter
+     * @param bool   $printBackground
+     * @param int    $scale
+     * @param float  $paperWidth
+     * @param int    $paperHeight
+     * @param int    $marginTop
+     * @param int    $marginBottom
+     * @param int    $marginLeft
+     * @param int    $marginRight
+     * @param string $pageRanges
+     * @param bool   $ignoreInvalidPageRanges
+     * @param string $headerTemplate
+     * @param string $footerTemplate
+     * @throws \Exception
+     */
+    public function printToPDF($filename, $landscape = false, $displayHeaderFooter = false, $printBackground = false, $scale = 1, $paperWidth = 8.5, $paperHeight = 11, $marginTop = 1, $marginBottom = 1, $marginLeft = 1, $marginRight = 1, $pageRanges = '', $ignoreInvalidPageRanges = false, $headerTemplate = '', $footerTemplate = '')
+    {
+        if (false === $this->browser->isHeadless()) {
+            throw new \RuntimeException('Page.printToPDF is only available in headless mode.');
+        }
+
+        $options = [
+            'landscape' => $landscape,
+            'displayHeaderFooter' => $displayHeaderFooter,
+            'printBackground' => $printBackground,
+            'scale' => $scale,
+            'paperWidth' => $paperWidth,
+            'paperHeight' => $paperHeight,
+            'marginTop' => $marginTop,
+            'marginBottom' => $marginBottom,
+            'marginLeft' => $marginLeft,
+            'marginRight' => $marginRight,
+            'pageRanges' => $pageRanges,
+            'ignoreInvalidPageRanges' => $ignoreInvalidPageRanges,
+            'headerTemplate' => $headerTemplate,
+            'footerTemplate' => $footerTemplate
+        ];
+
+        $response = $this->page->send('Page.printToPDF', $options);
+
+        if (false === array_key_exists('data', $response) || false === $pdfData = base64_decode($response['data'])) {
+            throw new \Exception('PDF could not be created.');
+        }
+
+        file_put_contents($filename, $pdfData);
+    }
+
+    /**
+     * For more information see https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-captureScreenshot
+     *
+     * @param string $filename
+     * @param array $options
+     * @throws \Exception
+     */
+    public function captureScreenshot($filename, $options = [])
+    {
+        if (false === $this->browser->isHeadless()) {
+            throw new \RuntimeException('Page.captureScreenshot is only available in headless mode.');
+        }
+
+        $response = $this->page->send('Page.captureScreenshot', $options);
+
+        if (false === array_key_exists('data', $response) || false === $imageData = base64_decode($response['data'])) {
+            throw new \Exception('Screenshot could not be created.');
+        }
+
+        file_put_contents($filename, $imageData);
+    }
 }
