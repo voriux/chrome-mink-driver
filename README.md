@@ -44,8 +44,6 @@ use Behat\Mink\Mink;
 use Behat\Mink\Session;
 use DMore\ChromeDriver\ChromeDriver;
 
-use Selenium\Client as SeleniumClient;
-
 $mink = new Mink(array(
     'browser' => new Session(new ChromeDriver('http://localhost:9222', null, 'http://www.google.com'))
 ));
@@ -80,6 +78,43 @@ Besides the above mentioned download options the following options can be provid
 | Option           | Value               | Description                   |
 |------------------|---------------------|-------------------------------|
 | socketTimeout    | int, default: 10    | Connection timeout in seconds |
+
+## Rendering PDF and Screenshots
+
+Despite the Mink functionality the driver supports printing PDF pages or capturing a screenshot.
+
+Usage:
+
+```php
+use Behat\Mink\Mink;
+use Behat\Mink\Session;
+use DMore\ChromeDriver\ChromeDriver;
+
+$mink = new Mink(array(
+    'browser' => new Session(new ChromeDriver('http://localhost:9222', null, 'http://www.google.com'))
+));
+
+// set the default session name
+$mink->setDefaultSessionName('browser');
+
+// visit a page
+$mink->getSession()->visit('https://gitlab.com/DMore/chrome-mink-driver/blob/master/README.md');
+
+/** @var ChromeDriver $driver */
+$driver = $mink->getSession()->getDriver();
+
+$driver->printToPdf('/tmp/readme.pdf');
+```
+
+The available options are documented here: https://chromedevtools.github.io/devtools-protocol/tot/Page/#method-printToPDF
+
+You can capture a screenshot with the `captueScreenshot` method. Options are documented here.
+
+Please note, it is recommended to start Chrome with the disable-extensions flag like:
+
+```bash
+google-chrome-stable --disable-gpu --headless --remote-debugging-address=0.0.0.0 --remote-debugging-port=9222 --window-size="1920,1080" --disable-extensions
+```
 
 ## Behat
 
