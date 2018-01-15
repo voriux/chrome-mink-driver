@@ -513,7 +513,7 @@ JS;
     public function getText($xpath)
     {
         $text = $this->getElementProperty($xpath, 'innerText');
-        $text = trim(preg_replace('/\s+/', ' ', $text), ' ');
+        $text = trim(preg_replace('/\s+/u', ' ', $text), ' ');
         return $text;
     }
 
