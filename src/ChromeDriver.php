@@ -1257,13 +1257,21 @@ JS;
         $return = [];
         foreach ($properties as $property) {
             if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
-                if (!empty($property['value']['type']) && $property['value']['type'] == 'object' &&
-                    !empty($property['value']['className']) &&
-                    in_array($property['value']['className'], ['Array', 'Object'])
+                $value = $property['value'];
+                if (!empty($value['type']) && $value['type'] == 'object' &&
+                    !empty($value['className']) &&
+                    in_array($value['className'], ['Array', 'Object'])
                 ) {
-                    $return[$property['name']] = $this->fetchObjectProperties($property['value']);
+                    $return[$property['name']] = $this->fetchObjectProperties($value);
                 } else {
-                    $return[$property['name']] = $property['value']['value'];
+                    if ($value['type'] === 'number' && !array_key_exists('value', $value) &&
+                        array_key_exists('unserializableValue', $value) && $value['unserializableValue'] === '-0') {
+                        $return[$property['name']] = 0;
+                    } elseif (!array_key_exists('value', $value)) {
+                        throw new DriverException('Property value not set');
+                    } else {
+                        $return[$property['name']] = $value['value'];
+                    }
                 }
             }
         }
