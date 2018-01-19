@@ -451,7 +451,7 @@ JS;
      * Finds elements with specified XPath query.
      *
      * @param string $xpath
-     * @return \Behat\Mink\Element\NodeElement[]
+     * @return string[] The XPath of the matched elements
      * @throws ElementNotFoundException
      */
     protected function findElementXpaths($xpath)
@@ -487,8 +487,16 @@ JS;
     result
 JS;
 
-        $value = $this->evaluateScript($expression);
-        return $value;
+        $values = $this->evaluateScript($expression);
+
+        // Cannot XPath directly into an SVG, workaround is to select the element from the result of the original XPath.
+        foreach ($values as $key => $value) {
+            if (stripos($value, 'svg[') !== false) {
+                $values[$key] = sprintf('(%s)[%d]', $xpath, $key + 1);
+            }
+        }
+
+        return $values;
     }
 
     /**
