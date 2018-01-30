@@ -167,6 +167,7 @@ class ChromeDriver extends CoreDriver
     public function visit($url)
     {
         $this->page->visit($url);
+        $this->document = 'document';
         $this->page->waitForLoad();
         $this->waitForDom();
     }
