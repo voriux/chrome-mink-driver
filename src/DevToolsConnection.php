@@ -22,22 +22,6 @@ abstract class DevToolsConnection
         $this->socket_timeout = $socket_timeout;
     }
 
-    public function canDevToolsConnectionBeEstablished()
-    {
-        $options = ['fragment_size' => 2000000]; # Chrome closes the connection if a message is sent in fragments
-        if (is_numeric($this->socket_timeout) && $this->socket_timeout > 0) {
-            $options['timeout'] = (int) $this->socket_timeout;
-        }
-        $client = new Client($this->url, $options);
-
-        return $client->isConnected();
-    }
-
-    protected function getUrl()
-    {
-        return $this->url;
-    }
-    
     public function connect($url = null)
     {
         $url = $url == null ? $this->url : $url;
