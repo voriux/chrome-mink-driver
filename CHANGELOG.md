@@ -1,6 +1,10 @@
 Changelog
 =========
 
+## 2.6.2
+
+* Fixed wrongful assumption that chrome has crashed when it was waiting for a long page load.
+
 ## 2.6.1
 
 * Fix unicode preg_replace - [PFlorent Ruard-Dumaine](https://gitlab.com/atalargo)
