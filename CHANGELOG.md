@@ -1,6 +1,16 @@
 Changelog
 =========
 
+## 2.6.1
+
+* Fix unicode preg_replace - [PFlorent Ruard-Dumaine](https://gitlab.com/atalargo)
+* Documentation for socketTimeout option - [Peter Rehm](https://gitlab.com/peterrehm)
+* Reset document to document after visiting a new url - [Peter Rehm](https://gitlab.com/peterrehm)
+* Improved error handling when Chrome Connection can not be established and provided hints. - [Peter Rehm](https://gitlab.com/peterrehm)
+* Fixes undefined index 'value' for properties - [Mark Nielsen](https://gitlab.com/polothy)
+* Fix XPaths for SVGs - [Mark Nielsen](https://gitlab.com/polothy)
+* Resolve "Default socket timeout is inconsistent"  - [Sascha Grossenbacher](https://gitlab.com/saschagros)
+
 ## 2.6
 
 * Add click on radio element when selected - [Peter Rehm](https://gitlab.com/peterrehm)
