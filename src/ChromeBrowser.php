@@ -44,7 +44,7 @@ class ChromeBrowser extends DevToolsConnection
         if (null === $versionInfo) {
             throw new \RuntimeException(
                 sprintf(
-                    'Could not fetch version information from %s. Please check if Chrome is running.',
+                    'Could not fetch version information from %s. Please check if Chrome is running. Please see docs/troubleshooting.md if Chrome crashed unexpected.',
                     $this->http_uri.'/json/version'
                 )
             );
