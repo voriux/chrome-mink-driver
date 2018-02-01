@@ -24,13 +24,14 @@ abstract class DevToolsConnection
 
     public function canDevToolsConnectionBeEstablished()
     {
-        $options = ['fragment_size' => 2000000]; # Chrome closes the connection if a message is sent in fragments
-        if (is_numeric($this->socket_timeout) && $this->socket_timeout > 0) {
-            $options['timeout'] = (int) $this->socket_timeout;
-        }
-        $client = new Client($this->url, $options);
+        $url = 'http://127.0.0.1:9222/json/version';
+        $c = curl_init($url);
+        curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
+        curl_setopt($c, CURLOPT_FOLLOWLOCATION, 1);
+        $s = curl_exec($c);
+        curl_close($c);
 
-        return $client->isConnected();
+        return $s !== false && strpos($s, 'Chrome') !== false;
     }
 
     protected function getUrl()
