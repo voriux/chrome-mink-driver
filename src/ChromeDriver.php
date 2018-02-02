@@ -1069,11 +1069,13 @@ JS;
     public function acceptAlert($text = '')
     {
         $this->page->send('Page.handleJavaScriptDialog', ['accept' => true, 'promptText' => $text]);
+        $this->waitForDom();
     }
 
     public function dismissAlert()
     {
         $this->page->send('Page.handleJavaScriptDialog', ['accept' => false]);
+        $this->waitForDom();
     }
 
     protected function deleteAllCookies()
@@ -1320,8 +1322,10 @@ JS;
 
     protected function waitForDom()
     {
-        $this->wait(3000, 'document.readyState == "complete"');
-        $this->page->waitForLoad();
+        if (!$this->page->hasJavascriptDialog()) {
+            $this->wait(3000, 'document.readyState == "complete"');
+            $this->page->waitForLoad();
+        }
     }
 
     /**
