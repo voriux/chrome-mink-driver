@@ -54,26 +54,26 @@ Chrome beta:
 Headed:
   <<: *test_template
   variables:
-    AUTOSTART_XVFB: true
+    AUTOSTART_XVFB: "true"
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.2
 
 Headed chrome unstable:
   <<: *test_template
   variables:
-    AUTOSTART_XVFB: true
+    AUTOSTART_XVFB: "true"
     CHROME_BUILD: google-chrome-unstable
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.2
 
 Headed chrome beta:
   <<: *test_template
   variables:
-    AUTOSTART_XVFB: true
+    AUTOSTART_XVFB: "true"
     CHROME_BUILD: google-chrome-beta
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.2
 
 Headed chromium:
   <<: *test_template
   variables:
-    AUTOSTART_XVFB: true
+    AUTOSTART_XVFB: "true"
     CHROME_BUILD: chromium
   image: registry.gitlab.com/dmore/docker-chrome-headless:7.2
