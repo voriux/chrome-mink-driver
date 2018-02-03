@@ -10,7 +10,7 @@ stages:
   tags: [docker]
   script:
     - composer install -o --ansi --no-progress
-    - vendor/bin/phpunit --colors=always
+    - vendor/bin/phpunit --colors=always || vendor/bin/phpunit --colors=always
   cache:
     key: common
     paths:
