@@ -1,6 +1,7 @@
 variables:
   COMPOSER_CACHE_DIR: ".cache/composer"
   DOCROOT: "${CI_PROJECT_DIR}/vendor/mink/driver-testsuite/web-fixtures"
+  CHROME_DEBUG_URL: http://localhost:9222
 
 stages:
   - test
@@ -9,6 +10,7 @@ stages:
   stage: test
   tags: [docker]
   script:
+    - bin/wait-for-chrome.sh
     - composer install -o --ansi --no-progress
     - vendor/bin/phpunit --colors=always || vendor/bin/phpunit --colors=always
   cache:
