@@ -2,9 +2,8 @@
 namespace DMore\ChromeDriver;
 
 use Behat\Mink\Exception\DriverException;
-use WebSocket\ConnectionException;
 
-class ChromePage extends DevToolsConnection
+class ChromePage
 {
     /** @var array */
     private $pending_requests = [];
@@ -14,55 +13,57 @@ class ChromePage extends DevToolsConnection
     private $has_javascript_dialog = false;
     /** @var array https://chromedevtools.github.io/devtools-protocol/tot/Network/#type-Response */
     private $response = null;
+    private $connection;
+    /** @var string[] */
+    private $request_headers = [];
+    private $browser_version;
+    private $base_url;
+    private $frames_pending_navigation = [];
 
-    public function connect($url = null)
+    public function __construct(DevToolsConnection $connection, $browser_version, $base_url)
     {
-        parent::connect();
-        $this->send('Page.enable');
-        $this->send('DOM.enable');
-        $this->send('Network.enable');
-        $this->send('Animation.enable');
-        $this->send('Animation.setPlaybackRate', ['playbackRate' => 100000]);
+        $this->connection = $connection;
+        $this->browser_version = $browser_version;
+        $this->base_url = $base_url;
+
+        $connection->on('event', function ($event) {
+            $this->handleEvent($event);
+        });
+    }
+
+    public function connect()
+    {
+        $this->connection->connect();
+        $this->connection->asyncSend('Page.enable');
+        $this->connection->asyncSend('DOM.enable');
+        $this->connection->asyncSend('Network.enable');
+        $this->connection->asyncSend('Animation.enable');
+        $this->connection->asyncSend('Animation.setPlaybackRate', ['playbackRate' => 100000]);
     }
 
     public function reset()
     {
         $this->response = null;
+        $this->request_headers = [];
+        $this->sendRequestHeaders();
     }
 
     public function visit($url)
     {
-        if (count($this->pending_requests) > 0) {
-            $this->waitFor(function () {
-                return count($this->pending_requests) == 0;
+        if (count($this->pending_requests) > 0 || count($this->frames_pending_navigation) > 0) {
+            $this->connection->waitFor(function () {
+                return count($this->pending_requests) == 0 && count($this->frames_pending_navigation) == 0;
             });
         }
         $this->response = null;
         $this->page_ready = false;
-        $this->send('Page.navigate', ['url' => $url]);
+        $this->connection->send('Page.navigate', ['url' => $url]);
     }
 
     public function reload()
     {
         $this->page_ready = false;
-        $this->send('Page.reload');
-    }
-
-    public function waitForLoad()
-    {
-        if (!$this->page_ready) {
-            try {
-                $this->waitFor(function () {
-                    return $this->page_ready;
-                });
-            } catch (StreamReadException $exception) {
-                if (!$exception->isEof() && $exception->isTimedOut()) {
-                    $this->waitForLoad();
-                }
-            } catch (ConnectionException $exception) {
-                throw new DriverException("Page not loaded");
-            }
-        }
+        $this->connection->asyncSend('Page.reload');
     }
 
     public function getResponse()
@@ -82,7 +83,8 @@ class ChromePage extends DevToolsConnection
     public function getTabs()
     {
         $tabs = [];
-        foreach ($this->send('Target.getTargets')['targetInfos'] as $tab) {
+        $targets = $this->connection->send('Target.getTargets');
+        foreach ($targets['targetInfos'] as $tab) {
             if ($tab['type'] == 'page') {
                 $tabs[] = $tab;
             }
@@ -90,83 +92,370 @@ class ChromePage extends DevToolsConnection
         return array_reverse($tabs, true);
     }
 
+    protected function sendRequestHeaders()
+    {
+        $this->connection->asyncSend('Network.setExtraHTTPHeaders', ['headers' => $this->request_headers ?: new \stdClass()]);
+    }
+
     private function waitForHttpResponse()
     {
         if (null === $this->response) {
             $parameters = ['expression' => 'document.readyState == "complete"'];
-            $domReady = $this->send('Runtime.evaluate', $parameters)['result']['value'];
+            $domReady = $this->connection->send('Runtime.evaluate', $parameters)['result']['value'];
             if (count($this->pending_requests) == 0 && $domReady) {
-                $this->response = [
-                    'status' => 200,
-                    'headers' => [],
-                ];
-                return;
+                if (null === $this->response) {
+                    $this->response = [
+                        'status' => 200,
+                        'headers' => [],
+                    ];
+                    return;
+                }
             }
 
-            $this->waitFor(function () {
+            $this->connection->waitFor(function () {
                 return null !== $this->response && count($this->pending_requests) == 0;
             });
         }
     }
 
-    /**
-     * @param array $data
-     * @return bool
-     * @throws DriverException
-     */
-    protected function processResponse(array $data)
+    public function waitForLoad()
     {
-        if (array_key_exists('method', $data)) {
-            switch ($data['method']) {
-                case 'Page.javascriptDialogOpening':
-                    $this->has_javascript_dialog = true;
-                    return true;
-                case 'Page.javascriptDialogClosed':
-                    $this->has_javascript_dialog = false;
-                    break;
-                case 'Network.requestWillBeSent':
-                    if ($data['params']['type'] == 'Document') {
-                        $this->pending_requests[$data['params']['requestId']] = true;
+        while (!$this->page_ready) {
+            $this->connection->tick();
+        }
+    }
+
+    public function setDownloadBehavior($download_behavior)
+    {
+        $this->connection->asyncSend(
+            'Page.setDownloadBehavior',
+            $download_behavior
+        );
+    }
+
+    public function setOverrideCertificateErrors($override_certificate_errors)
+    {
+        $this->connection->asyncSend('Security.enable');
+        $this->connection->asyncSend('Security.setOverrideCertificateErrors', $override_certificate_errors);
+    }
+
+    /**
+     * @param $script
+     * @return null
+     */
+    public function runScript($script)
+    {
+        # TODO: Investigate Runtime.enable with Runtime.executionContextDestroyed/executionContextCreated instead of waiting for load
+        $this->waitForLoad();
+        return $this->connection->send('Runtime.evaluate', ['expression' => $script]);
+    }
+
+    public function runAsyncScript($script)
+    {
+        $this->connection->asyncSend('Runtime.evaluate', ['expression' => $script]);
+    }
+
+    public function acceptAlert($text = '')
+    {
+        $this->connection->asyncSend('Page.handleJavaScriptDialog', ['accept' => true, 'promptText' => $text]);
+    }
+
+    public function dismissAlert()
+    {
+        $this->connection->asyncSend('Page.handleJavaScriptDialog', ['accept' => false]);
+    }
+
+    public function deleteAllCookies()
+    {
+        $this->connection->asyncSend('Network.clearBrowserCookies');
+    }
+
+    public function setCookie($name, $value)
+    {
+        if ($value === null) {
+            foreach ($this->connection->send('Network.getAllCookies')['cookies'] as $cookie) {
+                if ($cookie['name'] == $name) {
+                    if ($this->browser_version >= 63) {
+                        $parameters = ['name' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
+                        $this->connection->asyncSend('Network.deleteCookies', $parameters);
+                    } else {
+                        $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
+                        $this->connection->asyncSend('Network.deleteCookie', $parameters);
                     }
-                    break;
-                case 'Network.responseReceived':
-                    if ($data['params']['type'] == 'Document') {
-                        unset($this->pending_requests[$data['params']['requestId']]);
-                        $this->response = $data['params']['response'];
+                }
+            }
+        } else {
+            $url = $this->base_url . '/';
+            $value = urlencode($value);
+            $this->connection->asyncSend('Network.setCookie', ['url' => $url, 'name' => $name, 'value' => $value]);
+        }
+    }
+
+    public function getCookies()
+    {
+        return $this->connection->send('Network.getCookies');
+    }
+
+    public function setRequestHeader($name, $value)
+    {
+        $this->request_headers[$name] = $value;
+        $this->sendRequestHeaders();
+    }
+
+    public function unsetRequestHeader($name)
+    {
+        if (array_key_exists($name, $this->request_headers)) {
+            unset($this->request_headers[$name]);
+            $this->sendRequestHeaders();
+        }
+    }
+
+    public function captureScreenshot($options = [])
+    {
+        return $this->connection->send('Page.captureScreenshot', $options);
+    }
+
+    public function evaluateScript($script)
+    {
+        if (substr($script, 0, 8) === 'function') {
+            $script = '(' . $script . ')';
+            if (substr($script, -2) == ';)') {
+                $script = substr($script, 0, -2) . ')';
+            }
+        }
+
+        $result = $this->runScript($script)['result'];
+
+        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
+            if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
+                return $this->evaluateScript('(function() {' . $script . '}());');
+            }
+            if (preg_match('/Cannot read property .document. of null/', $result['description']) === 1) {
+                throw new NoSuchFrameException('The iframe no longer exists');
+            }
+            throw new DriverException($result['description']);
+        }
+
+        if ($result['type'] == 'object' && array_key_exists('subtype', $result)) {
+            if ($result['subtype'] == 'null') {
+                return null;
+            } elseif ($result['subtype'] == 'array' && $result['className'] == 'Array' && $result['objectId']) {
+                return $this->fetchObjectProperties($result);
+            } else {
+                return [];
+            }
+        } elseif ($result['type'] == 'object' && $result['className'] == 'Object') {
+            return $this->fetchObjectProperties($result);
+        } elseif ($result['type'] == 'undefined') {
+            return null;
+        }
+
+        if (!array_key_exists('value', $result)) {
+            return null;
+        }
+
+        return $result['value'];
+    }
+
+    public function clearFocusedInput()
+    {
+        $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8];
+        $this->connection->asyncSend('Input.dispatchKeyEvent', $parameters);
+        $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+    }
+
+    /**
+     * @param $value
+     */
+    public function simulateTyping($value)
+    {
+        for ($i = 0; $i < mb_strlen($value); $i++) {
+            $char = mb_substr($value, $i, 1);
+            if ($char == "\n") {
+                $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => chr(13)]);
+            } else {
+                $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
+            }
+            $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+        }
+    }
+
+    public function attachFile($name, $path, $include_iframes) : bool
+    {
+        $parameters = [
+            'pierce' => $include_iframes,
+        ];
+
+        foreach ($this->connection->send('DOM.getFlattenedDocument', $parameters)['nodes'] as $element) {
+            if (!empty($element['attributes'])) {
+                $num_attributes = count($element['attributes']);
+                for ($key = 0; $key < $num_attributes; $key += 2) {
+                    if ($element['attributes'][$key] == 'name' && $element['attributes'][$key + 1] == $name) {
+                        $this->connection->asyncSend('DOM.setFileInputFiles',
+                            ['nodeId' => $element['nodeId'], 'files' => [$path]]);
+                        return true;
                     }
-                    break;
-                case 'Network.loadingFailed':
-                    if ($data['params']['canceled']) {
-                        unset($this->pending_requests[$data['params']['requestId']]);
-                    }
-                    break;
-                case 'Page.frameNavigated':
-                case 'Page.loadEventFired':
-                case 'Page.frameStartedLoading':
-                    $this->page_ready = false;
-                    break;
-                case 'Page.frameStoppedLoading':
-                    $this->page_ready = true;
-                    break;
-                case 'Inspector.targetCrashed':
-                    throw new DriverException('Browser crashed');
-                    break;
-                case 'Animation.animationStarted':
-                    if (!empty($data['params']['source']['duration'])) {
-                        usleep($data['params']['source']['duration'] * 10);
-                    }
-                    break;
-                case 'Security.certificateError':
-                    if (isset($data['params']['eventId'])) {
-                        $this->send('Security.handleCertificateError', ['eventId' => $data['params']['eventId'], 'action' => 'continue']);
-                        $this->page_ready = false;
-                    }
-                    break;
-                default:
-                    continue;
+                }
             }
         }
 
         return false;
+    }
+
+    /**
+     * @param $result
+     * @return array
+     * @throws DriverException
+     */
+    protected function fetchObjectProperties($result)
+    {
+        $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
+        $properties = $this->connection->send('Runtime.getProperties', $parameters)['result'];
+        $return = [];
+        foreach ($properties as $property) {
+            if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
+                $value = $property['value'];
+                if (!empty($value['type']) && $value['type'] == 'object' &&
+                    !empty($value['className']) &&
+                    in_array($value['className'], ['Array', 'Object'])
+                ) {
+                    $return[$property['name']] = $this->fetchObjectProperties($value);
+                } else {
+                    if ($value['type'] === 'number' && !array_key_exists('value', $value) &&
+                        array_key_exists('unserializableValue', $value) && $value['unserializableValue'] === '-0') {
+                        $return[$property['name']] = 0;
+                    } elseif (!array_key_exists('value', $value)) {
+                        throw new DriverException('Property value not set');
+                    } else {
+                        $return[$property['name']] = $value['value'];
+                    }
+                }
+            }
+        }
+        return $return;
+    }
+
+    public function getTargetInfo($id)
+    {
+        return $this->connection->send('Target.getTargetInfo', ['targetId' => $id])['targetInfo'];
+    }
+
+    /**
+     * @param array $data
+     * @throws DriverException
+     */
+    private function handleEvent(array $data)
+    {
+        switch ($data['method']) {
+            case 'Page.javascriptDialogOpening':
+                $this->has_javascript_dialog = true;
+                return;
+            case 'Page.javascriptDialogClosed':
+                $this->has_javascript_dialog = false;
+                break;
+            case 'Network.requestWillBeSent':
+                if ($data['params']['type'] == 'Document') {
+                    $this->pending_requests[$data['params']['requestId']] = true;
+                }
+                break;
+            case 'Network.responseReceived':
+                if ($data['params']['type'] == 'Document') {
+                    unset($this->pending_requests[$data['params']['requestId']]);
+                    $this->response = $data['params']['response'];
+                }
+                break;
+            case 'Network.loadingFailed':
+                if ($data['params']['canceled']) {
+                    unset($this->pending_requests[$data['params']['requestId']]);
+                }
+                break;
+            case 'Page.frameNavigated':
+                unset($this->frames_pending_navigation[$data['params']['frameId']]);
+                $this->page_ready = false;
+                break;
+            case 'Page.loadEventFired':
+                $this->page_ready = false;
+                break;
+            case 'Page.frameStartedLoading':
+            case 'Page.frameScheduledNavigation':
+                $this->frames_pending_navigation[$data['params']['frameId']] = true;
+                $this->page_ready = false;
+                break;
+            case 'Page.frameStoppedLoading':
+                unset($this->frames_pending_navigation[$data['params']['frameId']]);
+                $this->page_ready = true;
+                break;
+            case 'Inspector.targetCrashed':
+                throw new DriverException('Browser crashed');
+                break;
+            case 'Animation.animationStarted':
+                if (!empty($data['params']['source']['duration'])) {
+                    usleep($data['params']['source']['duration'] * 10);
+                }
+                break;
+            case 'Security.certificateError':
+                if (isset($data['params']['eventId'])) {
+                    $parameters = ['eventId' => $data['params']['eventId'], 'action' => 'continue'];
+                    $this->connection->send('Security.handleCertificateError', $parameters);
+                    $this->page_ready = false;
+                }
+                break;
+            default:
+                continue;
+        }
+    }
+
+    public function moveMouse($left, $top, $sync = false)
+    {
+        $parameters = ['type' => 'mouseMoved', 'x' => $left, 'y' => $top, 'time' => time()];
+        if ($sync) {
+            $this->connection->send('Input.dispatchMouseEvent', $parameters);
+        } else {
+            $this->connection->asyncSend('Input.dispatchMouseEvent', $parameters);
+        }
+    }
+
+    public function pressMouseButton($left, $top, $button = 'left', $click_count = null)
+    {
+        $parameters = ['type' => 'mousePressed', 'x' => $left, 'y' => $top, 'button' => $button, 'time' => time()];
+        if (null !== $click_count) {
+            $parameters['clickCount'] = $click_count;
+        }
+        $this->connection->asyncSend('Input.dispatchMouseEvent', $parameters);
+    }
+
+    public function releaseMouseButton($left, $top, $button = 'left', $click_count = null)
+    {
+        $parameters = ['type' => 'mouseReleased', 'x' => $left, 'y' => $top, 'button' => $button, 'time' => time()];
+        if (null !== $click_count) {
+            $parameters['clickCount'] = $click_count;
+        }
+        $this->connection->send('Input.dispatchMouseEvent', $parameters);
+    }
+
+    public function setVisibleSize($width, $height)
+    {
+        $this->connection->asyncSend('Emulation.setDeviceMetricsOverride', [
+            'width'             => $width,
+            'height'            => $height,
+            'deviceScaleFactor' => 0,
+            'mobile'            => false,
+            'fitWindow'         => false,
+        ]);
+        $this->connection->asyncSend('Emulation.setVisibleSize', [
+            'width'  => $width,
+            'height' => $height,
+        ]);
+    }
+
+    public function maximize()
+    {
+        $parameters = ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']];
+        $this->connection->asyncSend('Browser.setWindowBounds', $parameters);
+    }
+
+    public function printToPdf($options)
+    {
+        return $this->connection->send('Page.printToPDF', $options);
     }
 }

@@ -1,105 +1,129 @@
 <?php
+
 namespace DMore\ChromeDriver;
 
-use Behat\Mink\Exception\DriverException;
-use WebSocket\Client;
-use WebSocket\ConnectionException;
+use Evenement\EventEmitterInterface;
+use Evenement\EventEmitterTrait;
+use Ratchet\Client\Connector;
+use Ratchet\Client\WebSocket;
+use Ratchet\RFC6455\Messaging\MessageInterface;
+use React\EventLoop\Factory;
+use React\EventLoop\LoopInterface;
 
-abstract class DevToolsConnection
+class DevToolsConnection implements EventEmitterInterface
 {
-    /** @var Client */
-    private $client;
+    use EventEmitterTrait;
+
     /** @var int */
     private $command_id = 1;
     /** @var string */
     private $url;
-    /** @var int|null */
-    private $socket_timeout;
+    /** @var bool */
+    private $connected = false;
+    /** @var WebSocket */
+    private $socket;
+    protected $response_queue = [];
+    /** @var LoopInterface */
+    private $loop;
 
-    public function __construct($url, $socket_timeout = null)
+    public function __construct($url)
     {
         $this->url = $url;
-        $this->socket_timeout = $socket_timeout;
     }
 
     public function connect($url = null)
     {
         $url = $url == null ? $this->url : $url;
-        $options = ['fragment_size' => 2000000]; # Chrome closes the connection if a message is sent in fragments
-        if (is_numeric($this->socket_timeout) && $this->socket_timeout > 0) {
-            $options['timeout'] = (int) $this->socket_timeout;
-        }
-        $this->client = new Client($url, $options);
+        $this->loop = Factory::create();
+
+        $connector = new Connector($this->loop);
+        $connect = $connector($url, [], []);
+        $connect->then(function (WebSocket $socket) {
+            $this->connected = true;
+            $this->socket = $socket;
+
+            $socket->on('message', function (MessageInterface $message) {
+                $this->receive($message);
+            });
+
+            $socket->on('close', function () {
+                $this->connected = false;
+            });
+        });
     }
 
     public function close()
     {
-        $this->client->close();
+        $this->socket->close();
     }
 
     /**
      * @param string $command
      * @param array $parameters
-     * @return null|string
+     * @return array
      * @throws \Exception
      */
     public function send($command, array $parameters = [])
     {
+        $command_id = $this->asyncSend($command, $parameters);
+        $response = [];
+        $listener = function ($data) use (&$response, $command_id) {
+            if ($data['id'] == $command_id) {
+                $response = $data;
+            }
+        };
+
+        $this->on('response', $listener);
+
+        while ([] === $response) {
+            $this->tick();
+        }
+
+        $this->removeListener('response', $listener);
+
+        return $response['result'];
+    }
+
+    public function asyncSend($command, array $parameters = []) : int
+    {
+        while (!$this->connected) {
+            $this->tick();
+        }
+
         $payload['id'] = $this->command_id++;
         $payload['method'] = $command;
+
         if (!empty($parameters)) {
             $payload['params'] = $parameters;
         }
 
-        $this->client->send(json_encode($payload));
+        $this->socket->send(json_encode($payload));
 
-        $data = $this->waitFor(function ($data) use ($payload) {
-            return array_key_exists('id', $data) && $data['id'] == $payload['id'];
-        });
-
-        if (isset($data['result'])) {
-            return $data['result'];
-        }
-
-        return ['result' => ['type' => 'undefined']];
+        return $payload['id'];
     }
 
-    protected function waitFor(callable $is_ready)
+    public function waitFor(callable $is_ready)
     {
-        $data = [];
-        while (true) {
-            try {
-                $response = $this->client->receive();
-            } catch (ConnectionException $exception) {
-                $message = $exception->getMessage();
-                $state = json_decode(substr($message, strpos($message, '{')), true);
-                throw new StreamReadException($state['eof'], $state['timed_out'], $state['blocked']);
-            }
-            if (is_null($response)) {
-                return null;
-            }
-            $data = json_decode($response, true);
-
-            if (array_key_exists('error', $data)) {
-                $message = $data['error']['data'] ? $data['error']['message'] . '. ' . $data['error']['data'] : $data['error']['message'];
-                throw new DriverException($message , $data['error']['code']);
-            }
-
-            if ($this->processResponse($data)) {
-                break;
-            }
-
-            if ($is_ready($data)) {
-                break;
-            }
-        }
-
-        return $data;
+        do {
+            $this->loop->tick();
+        } while (!$is_ready());
     }
 
-    /**
-     * @param array $data
-     * @return bool
-     */
-    abstract protected function processResponse(array $data);
+    public function tick()
+    {
+        $this->loop->tick();
+    }
+
+    protected function receive(MessageInterface $message)
+    {
+        $data = json_decode($message->getPayload(), true);
+
+        if (array_key_exists('id', $data)) {
+            $this->emit('response', [$data]);
+        } elseif (array_key_exists('method', $data)) {
+            $this->emit('event', [$data]);
+        } else {
+            throw new \Exception("Can't handle '{$message->getPayload()}'");
+        }
+    }
 }
