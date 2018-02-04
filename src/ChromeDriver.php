@@ -563,7 +563,8 @@ JS;
         if (!$this->runScriptOnXpathElement($xpath, $is_text_field)) {
             $this->setNonTextTypeValue($xpath, $value);
         } else {
-            if (!$this->runScriptOnXpathElement($xpath, 'if (element.offsetParent !== null)  { element.focus(); element.select(); return true; } else { return false;  }')) {
+            $script = 'if (element.offsetParent !== null)  { element.focus(); element.select(); return true; } else { return false;  }';
+            if (!$this->runScriptOnXpathElement($xpath, $script, null, true)) {
               throw new DriverException('Element is not visible and can not be focused');
             }
             $this->page->clearFocusedInput();
@@ -780,7 +781,7 @@ JS;
     return !(rec.right < 0 || rec.bottom < 0 || window.getComputedStyle(element).visibility == "hidden");
 JS;
 
-        return $this->runScriptOnXpathElement($xpath, $script);
+        return $this->runScriptOnXpathElement($xpath, $script, null, true);
     }
 
     /**
@@ -867,8 +868,11 @@ JS;
     /**
      * {@inheritdoc}
      */
-    public function evaluateScript($script)
+    public function evaluateScript($script, $has_return = false)
     {
+        if ($has_return) {
+            $script = '(function() {' . $script . '}());';
+        }
         return $this->page->evaluateScript($script);
     }
 
@@ -1063,11 +1067,12 @@ JS;
      * @param $xpath
      * @param $script
      * @param null $type
+     * @param bool $has_return
      * @return array
      * @throws ElementNotFoundException
      * @throws \Exception
      */
-    protected function runScriptOnXpathElement($xpath, $script, $type = null)
+    protected function runScriptOnXpathElement($xpath, $script, $type = null, $has_return = false)
     {
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
@@ -1078,7 +1083,7 @@ JS;
 JS;
         $expression .= $script;
         try {
-            $result = $this->evaluateScript($expression);
+            $result = $this->evaluateScript($expression, $has_return);
         } catch (\Exception $exception) {
             if (strpos($exception->getMessage(), 'Element not found') !== false) {
                 throw new ElementNotFoundException($this, $type, 'xpath', $xpath);
