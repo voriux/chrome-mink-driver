@@ -4,8 +4,6 @@ namespace DMore\ChromeDriver;
 use Behat\Mink\Driver\CoreDriver;
 use Behat\Mink\Exception\DriverException;
 use Behat\Mink\Exception\ElementNotFoundException;
-use Symfony\Component\OptionsResolver\OptionsResolver;
-use WebSocket\ConnectionException;
 
 class ChromeDriver extends CoreDriver
 {
@@ -24,8 +22,6 @@ class ChromeDriver extends CoreDriver
     private $main_window;
     /** @var HttpClient */
     private $http_client;
-    /** @var string[] */
-    private $request_headers = [];
     /** @var string */
     private $base_url;
     /**
@@ -54,7 +50,8 @@ class ChromeDriver extends CoreDriver
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
-        $this->browser = new ChromeBrowser($this->ws_url . '/devtools/browser', isset($options['socketTimeout']) ? $options['socketTimeout'] : 10);
+        $connection = new DevToolsConnection($this->ws_url . '/devtools/browser');
+        $this->browser = new ChromeBrowser($connection);
         $this->browser->setHttpClient($http_client);
         $this->browser->setHttpUri($api_url);
         $this->options = $options;
@@ -62,7 +59,6 @@ class ChromeDriver extends CoreDriver
 
     public function start()
     {
-        $this->browser->connect();
         $this->main_window = $this->browser->start();
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
@@ -72,16 +68,12 @@ class ChromeDriver extends CoreDriver
             $downloadBehavior = isset($this->options['downloadBehavior']) ? $this->options['downloadBehavior'] : 'default';
             $downloadPath = isset($this->options['downloadPath']) ? $this->options['downloadPath'] : '/tmp/';
             if ($downloadBehavior !== 'default' || rtrim($downloadPath, '/') !== '/tmp') {
-                $this->page->send(
-                    'Page.setDownloadBehavior',
-                    ['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]
-                );
+                $this->page->setDownloadBehavior(['behavior' => $downloadBehavior, 'downloadPath' => $downloadPath]);
             }
         }
 
         if (isset($this->options['validateCertificate']) && $this->options['validateCertificate'] === false) {
-            $this->page->send('Security.enable');
-            $this->page->send('Security.setOverrideCertificateErrors', ['override' => true]);
+            $this->page->setOverrideCertificateErrors(['override' => true]);
         }
     }
 
@@ -111,19 +103,14 @@ class ChromeDriver extends CoreDriver
      */
     public function stop()
     {
-        try {
-            $this->reset();
-            foreach ($this->getWindowNames() as $key => $window_id) {
-                if ($key == 0) {
-                    continue;
-                }
-                $this->http_client->get($this->api_url . '/json/close/' . $window_id);
+        $this->reset();
+        foreach ($this->getWindowNames() as $key => $window_id) {
+            if ($key == 0) {
+                continue;
             }
-            $this->browser->close();
-        } catch (ConnectionException $exception) {
-        } catch (DriverException $exception) {
+            $this->http_client->get($this->api_url . '/json/close/' . $window_id);
         }
-
+        $this->browser->close();
         $this->is_started = false;
     }
 
@@ -150,11 +137,9 @@ class ChromeDriver extends CoreDriver
     public function reset()
     {
         $this->document = 'document';
-        $this->deleteAllCookies();
+        $this->page->deleteAllCookies();
         $this->connectToWindow($this->main_window);
         $this->page->reset();
-        $this->request_headers = [];
-        $this->sendRequestHeaders();
     }
 
     /**
@@ -168,7 +153,6 @@ class ChromeDriver extends CoreDriver
     {
         $this->page->visit($url);
         $this->document = 'document';
-        $this->page->waitForLoad();
         $this->waitForDom();
     }
 
@@ -203,8 +187,7 @@ class ChromeDriver extends CoreDriver
      */
     public function forward()
     {
-        $this->runScript('window.history.forward()');
-        $this->waitForDom();
+        $this->page->runScript('window.history.forward()');
         $this->page->waitForLoad();
     }
 
@@ -215,8 +198,7 @@ class ChromeDriver extends CoreDriver
      */
     public function back()
     {
-        $this->runScript('window.history.back()');
-        $this->waitForDom();
+        $this->page->runScript('window.history.back()');
         $this->page->waitForLoad();
     }
 
@@ -247,14 +229,14 @@ class ChromeDriver extends CoreDriver
                 }
             }
             try {
-                $this->runScript("window.latest_popup = window.open('', '{$name}');");
+                $this->page->runScript("window.latest_popup = window.open('', '{$name}');");
                 $condition = "window.latest_popup.location.href != 'about:blank';";
                 $this->wait(2000, $condition);
                 $script = "[window.latest_popup.document.title, window.latest_popup.location.href]";
                 list($title, $href) = $this->evaluateScript($script);
 
                 foreach ($this->getWindowNames() as $id) {
-                    $info = $this->page->send('Target.getTargetInfo', ['targetId' => $id])['targetInfo'];
+                    $info = $this->page->getTargetInfo($id);
                     if ($info['type'] === 'page' && $info['url'] == $href && $info['title'] == $title) {
                         $this->switchToWindow($id);
                         return;
@@ -308,8 +290,7 @@ JS;
      */
     public function setRequestHeader($name, $value)
     {
-        $this->request_headers[$name] = $value;
-        $this->sendRequestHeaders();
+        $this->page->setRequestHeader($name, $value);
     }
 
     /**
@@ -317,10 +298,7 @@ JS;
      */
     public function unsetRequestHeader($name)
     {
-        if (array_key_exists($name, $this->request_headers)) {
-            unset($this->request_headers[$name]);
-            $this->sendRequestHeaders();
-        }
+        $this->page->unsetRequestHeader($name);
     }
 
     /**
@@ -341,23 +319,7 @@ JS;
      */
     public function setCookie($name, $value = null)
     {
-        if ($value === null) {
-            foreach ($this->page->send('Network.getAllCookies')['cookies'] as $cookie) {
-                if ($cookie['name'] == $name) {
-                    if ($this->browser->getVersion() >= 63) {
-                        $parameters = ['name' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
-                        $this->page->send('Network.deleteCookies', $parameters);
-                    } else {
-                        $parameters = ['cookieName' => $name, 'url' => 'http://' . $cookie['domain'] . $cookie['path']];
-                        $this->page->send('Network.deleteCookie', $parameters);
-                    }
-                }
-            }
-        } else {
-            $url = $this->base_url . '/';
-            $value = urlencode($value);
-            $this->page->send('Network.setCookie', ['url' => $url, 'name' => $name, 'value' => $value]);
-        }
+        $this->page->setCookie($name, $value);
     }
 
     /**
@@ -371,7 +333,7 @@ JS;
      */
     public function getCookie($name)
     {
-        $result = $this->page->send('Network.getCookies');
+        $result = $this->page->getCookies();
 
         foreach ($result['cookies'] as $cookie) {
             if ($cookie['name'] == $name) {
@@ -411,7 +373,7 @@ JS;
      */
     public function getScreenshot()
     {
-        $screenshot = $this->page->send('Page.captureScreenshot');
+        $screenshot = $this->page->captureScreenshot();
         return base64_decode($screenshot['data']);
     }
 
@@ -601,27 +563,11 @@ JS;
         if (!$this->runScriptOnXpathElement($xpath, $is_text_field)) {
             $this->setNonTextTypeValue($xpath, $value);
         } else {
-            $current_value = $this->getValue($xpath);
-            if (!$this->runScriptOnXpathElement($xpath, 'if (element.offsetParent !== null)  { element.focus(); return true; } else { return false;  }')) {
+            if (!$this->runScriptOnXpathElement($xpath, 'if (element.offsetParent !== null)  { element.focus(); element.select(); return true; } else { return false;  }')) {
               throw new DriverException('Element is not visible and can not be focused');
             }
-            for ($i = 0; $i < strlen($current_value); $i++) {
-                $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 8, 'windowsVirtualKeyCode' => 8];
-                $this->page->send('Input.dispatchKeyEvent', $parameters);
-                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-                $parameters = ['type' => 'rawKeyDown', 'nativeVirtualKeyCode' => 46, 'windowsVirtualKeyCode' => 46];
-                $this->page->send('Input.dispatchKeyEvent', $parameters);
-                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-            }
-            for ($i = 0; $i < mb_strlen($value); $i++) {
-                $char = mb_substr($value, $i, 1);
-                if ($char == "\n") {
-                    $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => chr(13)]);
-                }
-                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
-                $this->page->send('Input.dispatchKeyEvent', ['type' => 'keyUp']);
-            }
-            usleep(5000);
+            $this->page->clearFocusedInput();
+            $this->page->simulateTyping($value);
 
             try {
                 $this->triggerEvent($xpath, 'change');
@@ -771,30 +717,13 @@ JS;
 
             if ($result !== null) {
                 list($left, $top) = $result;
-                $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left, 'y' => $top]);
-
-                $parameters = [
-                    'type' => 'mousePressed',
-                    'x' => $left,
-                    'y' => $top,
-                    'button' => 'left',
-                    'timestamp' => time(),
-                    'clickCount' => 1,
-                ];
-                $this->page->send('Input.dispatchMouseEvent', $parameters);
-                $parameters = [
-                    'type' => 'mouseReleased',
-                    'x' => $left,
-                    'y' => $top,
-                    'button' => 'left',
-                    'timestamp' => time(),
-                    'clickCount' => 1,
-                ];
-                $this->page->send('Input.dispatchMouseEvent', $parameters);
-                usleep(5000);
-                $this->waitForDom();
+                $this->page->moveMouse($left, $top);
+                $this->page->pressMouseButton($left, $top, 'left', 1);
+                $this->page->releaseMouseButton($left, $top,'left', 1);
             }
         }
+
+        usleep(5000);
     }
 
     /**
@@ -810,25 +739,9 @@ JS;
 JS;
 
         $name = $this->runScriptOnXpathElement($xpath, $script, 'file input');
-
-        $node_id = null;
-        $parameters = [
-          'pierce' => $this->document !== 'document',
-        ];
-        foreach ($this->page->send('DOM.getFlattenedDocument', $parameters)['nodes'] as $element) {
-            if (!empty($element['attributes'])) {
-                $num_attributes = count($element['attributes']);
-                for ($key = 0; $key < $num_attributes; $key += 2) {
-                    if ($element['attributes'][$key] == 'name' && $element['attributes'][$key + 1] == $name) {
-                        $this->page->send('DOM.setFileInputFiles',
-                            ['nodeId' => $element['nodeId'], 'files' => [$path]]);
-                        return;
-                    }
-                }
-            }
+        if (!$this->page->attachFile($name, $path, $this->document !== 'document')) {
+            throw new ElementNotFoundException($this, 'file', 'xpath', $xpath);
         }
-
-        throw new ElementNotFoundException($this, 'file', 'xpath', $xpath);
     }
 
     /**
@@ -885,7 +798,7 @@ JS;
     {
         $this->runScriptOnXpathElement($xpath, 'element.scrollIntoViewIfNeeded()');
         list($left, $top) = $this->getCoordinatesForXpath($xpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
+        $this->page->moveMouse($left + 1, $top + 1, true);
     }
 
     /**
@@ -934,14 +847,13 @@ JS;
     public function dragTo($sourceXpath, $destinationXpath)
     {
         list($left, $top) = $this->getCoordinatesForXpath($sourceXpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
-        $parameters = ['type' => 'mousePressed', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
-        $this->page->send('Input.dispatchMouseEvent', $parameters);
+        $this->page->moveMouse($left + 1, $top + 1);
+        $this->page->pressMouseButton($left + 1, $top + 1);
+
 
         list($left, $top) = $this->getCoordinatesForXpath($destinationXpath);
-        $this->page->send('Input.dispatchMouseEvent', ['type' => 'mouseMoved', 'x' => $left + 1, 'y' => $top + 1]);
-        $parameters = ['type' => 'mouseReleased', 'x' => $left + 1, 'y' => $top + 1, 'button' => 'left'];
-        $this->page->send('Input.dispatchMouseEvent', $parameters);
+        $this->page->moveMouse($left + 1, $top + 1);
+        $this->page->releaseMouseButton($left + 1, $top + 1);
     }
 
     /**
@@ -957,44 +869,7 @@ JS;
      */
     public function evaluateScript($script)
     {
-        if (substr($script, 0, 8) === 'function') {
-            $script = '(' . $script . ')';
-            if (substr($script, -2) == ';)') {
-                $script = substr($script, 0, -2) . ')';
-            }
-        }
-
-        $result = $this->runScript($script)['result'];
-
-        if (array_key_exists('subtype', $result) && $result['subtype'] === 'error') {
-            if ($result['className'] === 'SyntaxError' && strpos($result['description'], 'Illegal return') !== false) {
-                return $this->evaluateScript('(function() {' . $script . '}());');
-            }
-            if (preg_match('/Cannot read property .document. of null/', $result['description']) === 1) {
-                throw new NoSuchFrameException('The iframe no longer exists');
-            }
-            throw new DriverException($result['description']);
-        }
-
-        if ($result['type'] == 'object' && array_key_exists('subtype', $result)) {
-            if ($result['subtype'] == 'null') {
-                return null;
-            } elseif ($result['subtype'] == 'array' && $result['className'] == 'Array' && $result['objectId']) {
-                return $this->fetchObjectProperties($result);
-            } else {
-                return [];
-            }
-        } elseif ($result['type'] == 'object' && $result['className'] == 'Object') {
-            return $this->fetchObjectProperties($result);
-        } elseif ($result['type'] == 'undefined') {
-            return null;
-        }
-
-        if (!array_key_exists('value', $result)) {
-            return null;
-        }
-
-        return $result['value'];
+        return $this->page->evaluateScript($script);
     }
 
     /**
@@ -1031,17 +906,7 @@ JS;
      * @param int $height Set the window height, measured in pixels
      */
     public function setVisibleSize($width, $height) {
-        $this->page->send('Emulation.setDeviceMetricsOverride', [
-            'width'             => $width,
-            'height'            => $height,
-            'deviceScaleFactor' => 0,
-            'mobile'            => false,
-            'fitWindow'         => false,
-        ]);
-        $this->page->send('Emulation.setVisibleSize', [
-            'width'  => $width,
-            'height' => $height,
-        ]);
+        $this->page->setVisibleSize($width, $height);
     }
 
     /**
@@ -1053,7 +918,7 @@ JS;
             list($width, $height) = $this->evaluateScript('[screen.width, screen.height]');
             $this->setVisibleSize($width, $height);
         } else {
-            $this->page->send('Browser.setWindowBounds', ['windowId' => 1, 'bounds' => ['windowState' => 'maximized']]);
+            $this->page->maximize();
         }
         $this->executeScript("window.outerWidth = screen.width;window.outerHeight = screen.height;");
     }
@@ -1068,17 +933,12 @@ JS;
 
     public function acceptAlert($text = '')
     {
-        $this->page->send('Page.handleJavaScriptDialog', ['accept' => true, 'promptText' => $text]);
+        $this->page->acceptAlert($text);
     }
 
     public function dismissAlert()
     {
-        $this->page->send('Page.handleJavaScriptDialog', ['accept' => false]);
-    }
-
-    protected function deleteAllCookies()
-    {
-        $this->page->send('Network.clearBrowserCookies');
+        $this->page->dismissAlert();
     }
 
     /**
@@ -1246,48 +1106,6 @@ JS;
     }
 
     /**
-     * @param $script
-     * @return null
-     */
-    protected function runScript($script)
-    {
-        $this->page->waitForLoad();
-        return $this->page->send('Runtime.evaluate', ['expression' => $script]);
-    }
-
-    /**
-     * @param $result
-     * @return array
-     */
-    protected function fetchObjectProperties($result)
-    {
-        $parameters = ['objectId' => $result['objectId'], 'ownProperties' => true];
-        $properties = $this->page->send('Runtime.getProperties', $parameters)['result'];
-        $return = [];
-        foreach ($properties as $property) {
-            if ($property['name'] !== '__proto__' && $property['name'] !== 'length') {
-                $value = $property['value'];
-                if (!empty($value['type']) && $value['type'] == 'object' &&
-                    !empty($value['className']) &&
-                    in_array($value['className'], ['Array', 'Object'])
-                ) {
-                    $return[$property['name']] = $this->fetchObjectProperties($value);
-                } else {
-                    if ($value['type'] === 'number' && !array_key_exists('value', $value) &&
-                        array_key_exists('unserializableValue', $value) && $value['unserializableValue'] === '-0') {
-                        $return[$property['name']] = 0;
-                    } elseif (!array_key_exists('value', $value)) {
-                        throw new DriverException('Property value not set');
-                    } else {
-                        $return[$property['name']] = $value['value'];
-                    }
-                }
-            }
-        }
-        return $return;
-    }
-
-    /**
      * @param $window_id
      * @throws DriverException
      */
@@ -1302,7 +1120,8 @@ JS;
 
         foreach ($windows as $window) {
             if ($window['id'] == $window_id) {
-                $this->page = new ChromePage($window['webSocketDebuggerUrl'], isset($this->options['socketTimeout']) ? $this->options['socketTimeout'] : 10);
+                $connection = new DevToolsConnection($window['webSocketDebuggerUrl']);
+                $this->page = new ChromePage($connection, $this->browser->getVersion(), $this->base_url);
                 $this->page->connect();
                 $this->current_window = $window_id;
                 $this->document = 'document';
@@ -1311,11 +1130,6 @@ JS;
         }
 
         throw new DriverException('No such window ' . $window_id);
-    }
-
-    protected function sendRequestHeaders()
-    {
-        $this->page->send('Network.setExtraHTTPHeaders', ['headers' => $this->request_headers ?: new \stdClass()]);
     }
 
     protected function waitForDom()
@@ -1367,7 +1181,7 @@ JS;
             'footerTemplate' => $footerTemplate
         ];
 
-        $response = $this->page->send('Page.printToPDF', $options);
+        $response = $this->page->printToPdf($options);
 
         if (false === array_key_exists('data', $response) || false === $pdfData = base64_decode($response['data'])) {
             throw new \Exception('PDF could not be created.');
@@ -1389,7 +1203,7 @@ JS;
             throw new \RuntimeException('Page.captureScreenshot is only available in headless mode.');
         }
 
-        $response = $this->page->send('Page.captureScreenshot', $options);
+        $response = $this->page->captureScreenshot($options);
 
         if (false === array_key_exists('data', $response) || false === $imageData = base64_decode($response['data'])) {
             throw new \Exception('Screenshot could not be created.');

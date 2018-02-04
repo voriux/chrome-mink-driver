@@ -4,7 +4,7 @@ namespace DMore\ChromeDriver;
 use Behat\Mink\Exception\DriverException;
 use WebSocket\ConnectionException;
 
-class ChromeBrowser extends DevToolsConnection
+class ChromeBrowser
 {
     /** @var string */
     private $context_id;
@@ -16,6 +16,15 @@ class ChromeBrowser extends DevToolsConnection
     private $http_uri;
     /** @var string */
     private $version;
+    /**
+     * @var DevToolsConnection
+     */
+    private $connection;
+
+    public function __construct(DevToolsConnection $connection)
+    {
+        $this->connection = $connection;
+    }
 
     /**
      * @param HttpClient $client
@@ -67,11 +76,11 @@ class ChromeBrowser extends DevToolsConnection
                 // handling chrome versions 62+ where Target.createBrowserContext moved to new location
                 if(property_exists($versionInfo, 'webSocketDebuggerUrl')) {
                     $debugUrl = $versionInfo->webSocketDebuggerUrl;
-                    $this->connect($debugUrl);
+                    $this->connection->connect($debugUrl);
                 }
 
-                $this->context_id = $this->send('Target.createBrowserContext')['browserContextId'];
-                $data = $this->send('Target.createTarget',
+                $this->context_id = $this->connection->send('Target.createBrowserContext')['browserContextId'];
+                $data = $this->connection->send('Target.createTarget',
                     ['url' => 'about:blank', 'browserContextId' => $this->context_id]);
                 return $data['targetId'];
             } catch (DriverException $exception) {
@@ -91,18 +100,11 @@ class ChromeBrowser extends DevToolsConnection
     public function close()
     {
         if ($this->headless) {
-            if (!$this->send('Target.disposeBrowserContext', ['browserContextId' => $this->context_id])) {
-                throw new ConnectionException('Unable to close browser context');
+            if (!$this->connection->send('Target.disposeBrowserContext', ['browserContextId' => $this->context_id])) {
+                throw new DriverException('Unable to close browser context');
             }
         }
-        parent::close();
     }
-
-    protected function processResponse(array $data)
-    {
-        return false;
-    }
-
 
     /**
      * @return bool
