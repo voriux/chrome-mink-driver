@@ -76,7 +76,8 @@ class ChromeBrowser
                 // handling chrome versions 62+ where Target.createBrowserContext moved to new location
                 if(property_exists($versionInfo, 'webSocketDebuggerUrl')) {
                     $debugUrl = $versionInfo->webSocketDebuggerUrl;
-                    $this->connection->connect($debugUrl);
+                    $this->connection = new DevToolsConnection($debugUrl);
+                    $this->connection->connect();
                 }
 
                 $this->context_id = $this->connection->send('Target.createBrowserContext')['browserContextId'];
