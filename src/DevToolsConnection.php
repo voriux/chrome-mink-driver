@@ -66,20 +66,7 @@ class DevToolsConnection implements EventEmitterInterface
     public function send($command, array $parameters = [])
     {
         $command_id = $this->asyncSend($command, $parameters);
-        $response = [];
-        $listener = function ($data) use (&$response, $command_id) {
-            if ($data['id'] == $command_id) {
-                $response = $data;
-            }
-        };
-
-        $this->on('response', $listener);
-
-        while ([] === $response) {
-            $this->tick();
-        }
-
-        $this->removeListener('response', $listener);
+        $response = $this->awaitResponse($command_id);
 
         return $response['result'];
     }
@@ -100,6 +87,29 @@ class DevToolsConnection implements EventEmitterInterface
         $this->socket->send(json_encode($payload));
 
         return $payload['id'];
+    }
+
+    /**
+     * @param $command_id
+     * @return array
+     */
+    public function awaitResponse($command_id): array
+    {
+        $response = [];
+        $listener = function ($data) use (&$response, $command_id) {
+            if ($data['id'] == $command_id) {
+                $response = $data;
+            }
+        };
+
+        $this->on('response', $listener);
+
+        while ([] === $response) {
+            $this->tick();
+        }
+
+        $this->removeListener('response', $listener);
+        return $response;
     }
 
     public function waitFor(callable $is_ready)
