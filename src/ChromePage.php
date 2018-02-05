@@ -374,7 +374,8 @@ class ChromePage
                 }
                 break;
             case 'Page.frameNavigated':
-                unset($this->frames_pending_navigation[$data['params']['frameId']]);
+                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
+                unset($this->frames_pending_navigation[$frame_id]);
                 $this->page_ready = false;
                 break;
             case 'Page.loadEventFired':
@@ -382,11 +383,13 @@ class ChromePage
                 break;
             case 'Page.frameStartedLoading':
             case 'Page.frameScheduledNavigation':
-                $this->frames_pending_navigation[$data['params']['frameId']] = true;
+                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
+                $this->frames_pending_navigation[$frame_id] = true;
                 $this->page_ready = false;
                 break;
             case 'Page.frameStoppedLoading':
-                unset($this->frames_pending_navigation[$data['params']['frameId']]);
+                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
+                unset($this->frames_pending_navigation[$frame_id]);
                 $this->page_ready = true;
                 break;
             case 'Inspector.targetCrashed':
