@@ -276,7 +276,11 @@ class ChromePage
             } else {
                 $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
             }
-            $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+            $command_id = $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyUp']);
+        }
+
+        if (isset($command_id)) {
+            $this->connection->awaitResponse($command_id);
         }
     }
 
