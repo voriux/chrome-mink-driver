@@ -35,9 +35,7 @@ class ChromePage
     {
         $this->connection->connect();
         $this->connection->asyncSend('Page.enable');
-        $this->connection->asyncSend('DOM.enable');
         $this->connection->asyncSend('Network.enable');
-        $this->connection->asyncSend('Animation.enable');
         $this->connection->asyncSend('Animation.setPlaybackRate', ['playbackRate' => 100000]);
     }
 
