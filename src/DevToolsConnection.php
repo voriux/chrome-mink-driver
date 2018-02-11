@@ -106,8 +106,12 @@ class DevToolsConnection implements EventEmitterInterface
 
         $this->on('response', $listener);
 
-        while ([] === $response) {
-            $this->tick();
+        while (true) {
+            $this->loop->tick();
+            if ([] !== $response) {
+                break;
+            }
+            usleep(5000);
         }
 
         $this->removeListener('response', $listener);
