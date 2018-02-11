@@ -72,11 +72,11 @@ class DevToolsConnection implements EventEmitterInterface
     public function asyncSend($command, array $parameters = []) : int
     {
         while (!$this->connected) {
-            $this->tick();
+            $this->loop->tick();
             if ($this->connected) {
                 break;
             }
-            usleep(10000);
+            usleep(5000);
         }
 
         $payload['id'] = $this->command_id++;
@@ -125,7 +125,7 @@ class DevToolsConnection implements EventEmitterInterface
             if ($is_ready()) {
                 break;
             }
-            usleep(10000);
+            usleep(5000);
         }
     }
 

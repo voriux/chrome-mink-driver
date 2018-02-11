@@ -885,7 +885,7 @@ JS;
             if ($result || $iterations++ == $max_iterations) {
                 break;
             }
-            usleep(10000);
+            usleep(5000);
         } while (!$this->page->hasJavascriptDialog());
         return (bool)$result;
     }
