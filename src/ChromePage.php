@@ -269,13 +269,10 @@ class ChromePage
      */
     public function simulateTyping($value)
     {
+        $value = str_replace("\n", "\r", $value);
         for ($i = 0; $i < mb_strlen($value); $i++) {
             $char = mb_substr($value, $i, 1);
-            if ($char == "\n") {
-                $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => chr(13)]);
-            } else {
-                $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
-            }
+            $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyDown', 'text' => $char]);
             $command_id = $this->connection->asyncSend('Input.dispatchKeyEvent', ['type' => 'keyUp']);
         }
 
