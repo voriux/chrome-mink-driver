@@ -116,7 +116,7 @@ class DevToolsConnection implements EventEmitterInterface
 
     public function waitFor(callable $is_ready)
     {
-        while (true) {
+        while (!$is_ready()) {
             $this->loop->tick();
             if ($is_ready()) {
                 break;

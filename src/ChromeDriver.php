@@ -319,7 +319,6 @@ JS;
      */
     public function setCookie($name, $value = null)
     {
-        $this->page->waitForLoad();
         $this->page->setCookie($name, $value);
     }
 
@@ -885,8 +884,9 @@ JS;
             if ($result || $iterations++ == $max_iterations) {
                 break;
             }
-            usleep(5000);
+            usleep(10000);
         } while (!$this->page->hasJavascriptDialog());
+        $this->page->waitForLoad();
         return (bool)$result;
     }
 

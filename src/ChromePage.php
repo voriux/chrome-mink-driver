@@ -430,6 +430,10 @@ class ChromePage
             $parameters['clickCount'] = $click_count;
         }
         $this->connection->send('Input.dispatchMouseEvent', $parameters);
+        # Give chrome 5ms to process the onclick handlers
+        # If one of these triggered a new request (document or xhr), wait for it to complete before proceeding
+        # So that subsequent actions happen on the new page
+        usleep(5000);
         $this->waitForLoad();
     }
 
