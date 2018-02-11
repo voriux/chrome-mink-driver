@@ -688,43 +688,38 @@ JS;
      */
     public function click($xpath)
     {
-        $this->mouseOver($xpath);
-
+        # TODO: Avoid running this script for each click just to check if it's an option
+        # Xpath already has that information
         if ($this->runScriptOnXpathElement($xpath, 'element.tagName == "OPTION"')) {
             $this->setValue($xpath . '/ancestor::select[1]', $this->runScriptOnXpathElement($xpath, 'element.value'));
         } else {
-            $escaped = addslashes($xpath);
             $script = <<<JS
-(function() {
+    element.scrollIntoViewIfNeeded();
     var rect = element.getBoundingClientRect();
-    var initialX = Math.ceil(rect.left);
-    var initialY = Math.ceil(rect.top);
-    var maxX = Math.floor(rect.left + rect.width);
-    var maxY = Math.floor(rect.top + rect.height);
-    for (x = initialX; x <= maxX; x++) {
-        for (y = initialY; y <= maxY; y++) {
-            var pointElement = document.elementFromPoint(x, y);
-            if (element === pointElement || element.contains(pointElement)) {
-                return [x, y];
-            }
+    var targetX = Math.ceil(rect.left);
+    var targetY = Math.ceil(rect.top);
+    var middleX = Math.floor(targetX + (rect.width / 2));
+    var middleY = Math.floor(targetY + (rect.height / 2));
+    var x, y, pointElement;
+    for (x = middleX, y = middleY; x >= targetX, y >= targetY; x--, y--) {
+        pointElement = document.elementFromPoint(x, y);
+        if (element === pointElement || element.contains(pointElement)) {
+            return [x, y];
         }
     }
-    element.click();
+    element.click()
     return null;
-})();
 JS;
 
-            $result = $this->runScriptOnXpathElement($xpath, $script);
+            $result = $this->runScriptOnXpathElement($xpath, $script, null, true);
 
             if ($result !== null) {
                 list($left, $top) = $result;
                 $this->page->moveMouse($left, $top);
                 $this->page->pressMouseButton($left, $top, 'left', 1);
-                $this->page->releaseMouseButton($left, $top,'left', 1);
+                $this->page->releaseMouseButton($left, $top, 'left', 1);
             }
         }
-
-        usleep(5000);
     }
 
     /**
@@ -1081,7 +1076,7 @@ JS;
         throw new Error("Element not found");
     }
 JS;
-        $expression .= $script;
+        $expression .= "\n" . $script;
         try {
             $result = $this->evaluateScript($expression, $has_return);
         } catch (\Exception $exception) {
