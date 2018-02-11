@@ -42,9 +42,7 @@ class DevToolsConnection implements EventEmitterInterface
             $this->connected = true;
             $this->socket = $socket;
 
-            $socket->on('message', function (MessageInterface $message) {
-                $this->receive($message);
-            });
+            $socket->on('message', [$this, 'receive']);
 
             $socket->on('close', function () {
                 $this->connected = false;
@@ -75,6 +73,10 @@ class DevToolsConnection implements EventEmitterInterface
     {
         while (!$this->connected) {
             $this->tick();
+            if ($this->connected) {
+                break;
+            }
+            usleep(10000);
         }
 
         $payload['id'] = $this->command_id++;
@@ -114,9 +116,13 @@ class DevToolsConnection implements EventEmitterInterface
 
     public function waitFor(callable $is_ready)
     {
-        do {
+        while (true) {
             $this->loop->tick();
-        } while (!$is_ready());
+            if ($is_ready()) {
+                break;
+            }
+            usleep(10000);
+        }
     }
 
     public function tick()
@@ -124,7 +130,7 @@ class DevToolsConnection implements EventEmitterInterface
         $this->loop->tick();
     }
 
-    protected function receive(MessageInterface $message)
+    public function receive(MessageInterface $message)
     {
         $data = json_decode($message->getPayload(), true);
 

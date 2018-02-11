@@ -26,9 +26,7 @@ class ChromePage
         $this->browser_version = $browser_version;
         $this->base_url = $base_url;
 
-        $connection->on('event', function ($event) {
-            $this->handleEvent($event);
-        });
+        $connection->on('event', [$this, 'handleEvent']);
     }
 
     public function connect()
@@ -120,6 +118,10 @@ class ChromePage
     {
         while (!$this->page_ready) {
             $this->connection->tick();
+            if ($this->page_ready) {
+                break;
+            }
+            usleep(10000);
         }
     }
 
@@ -323,13 +325,14 @@ class ChromePage
                 ) {
                     $return[$property['name']] = $this->fetchObjectProperties($value);
                 } else {
-                    if ($value['type'] === 'number' && !array_key_exists('value', $value) &&
-                        array_key_exists('unserializableValue', $value) && $value['unserializableValue'] === '-0') {
-                        $return[$property['name']] = 0;
-                    } elseif (!array_key_exists('value', $value)) {
-                        throw new DriverException('Property value not set');
-                    } else {
+                    if (array_key_exists('value', $value)) {
                         $return[$property['name']] = $value['value'];
+                    } else {
+                        if ($value['type'] === 'number' && array_key_exists('unserializableValue', $value)) {
+                            $return[$property['name']] = (int) $value['unserializableValue'];
+                        } else {
+                            throw new DriverException('Property value not set');
+                        }
                     }
                 }
             }
@@ -346,15 +349,9 @@ class ChromePage
      * @param array $data
      * @throws DriverException
      */
-    private function handleEvent(array $data)
+    public function handleEvent(array $data)
     {
         switch ($data['method']) {
-            case 'Page.javascriptDialogOpening':
-                $this->has_javascript_dialog = true;
-                return;
-            case 'Page.javascriptDialogClosed':
-                $this->has_javascript_dialog = false;
-                break;
             case 'Network.requestWillBeSent':
                 if ($data['params']['type'] == 'Document') {
                     $this->pending_requests[$data['params']['requestId']] = true;
@@ -381,22 +378,19 @@ class ChromePage
                 break;
             case 'Page.frameStartedLoading':
             case 'Page.frameScheduledNavigation':
-                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
-                $this->frames_pending_navigation[$frame_id] = true;
                 $this->page_ready = false;
                 break;
             case 'Page.frameStoppedLoading':
-                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
-                unset($this->frames_pending_navigation[$frame_id]);
                 $this->page_ready = true;
+                break;
+            case 'Page.javascriptDialogOpening':
+                $this->has_javascript_dialog = true;
+                return;
+            case 'Page.javascriptDialogClosed':
+                $this->has_javascript_dialog = false;
                 break;
             case 'Inspector.targetCrashed':
                 throw new DriverException('Browser crashed');
-                break;
-            case 'Animation.animationStarted':
-                if (!empty($data['params']['source']['duration'])) {
-                    usleep($data['params']['source']['duration'] * 10);
-                }
                 break;
             case 'Security.certificateError':
                 if (isset($data['params']['eventId'])) {
