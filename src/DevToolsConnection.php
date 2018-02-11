@@ -76,7 +76,7 @@ class DevToolsConnection implements EventEmitterInterface
             if ($this->connected) {
                 break;
             }
-            usleep(5000);
+            usleep(1000);
         }
 
         $payload['id'] = $this->command_id++;
@@ -108,6 +108,9 @@ class DevToolsConnection implements EventEmitterInterface
 
         while ([] === $response) {
             $this->tick();
+            if ([] === $response) {
+                usleep(500);
+            }
         }
 
         $this->removeListener('response', $listener);
@@ -121,7 +124,7 @@ class DevToolsConnection implements EventEmitterInterface
             if ($is_ready()) {
                 break;
             }
-            usleep(5000);
+            usleep(1000);
         }
     }
 

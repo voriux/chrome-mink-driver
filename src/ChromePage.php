@@ -121,7 +121,7 @@ class ChromePage
             if ($this->page_ready) {
                 break;
             }
-            usleep(5000);
+            usleep(1000);
         }
     }
 
