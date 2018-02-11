@@ -153,7 +153,7 @@ class ChromeDriver extends CoreDriver
     {
         $this->page->visit($url);
         $this->document = 'document';
-        $this->waitForDom();
+        $this->page->waitForLoad();
     }
 
     /**
@@ -165,7 +165,7 @@ class ChromeDriver extends CoreDriver
      */
     public function getCurrentUrl()
     {
-        $this->waitForDom();
+        $this->page->waitForLoad();
         return $this->evaluateScript('window.location.href');
     }
 
@@ -319,6 +319,7 @@ JS;
      */
     public function setCookie($name, $value = null)
     {
+        $this->page->waitForLoad();
         $this->page->setCookie($name, $value);
     }
 
@@ -419,7 +420,7 @@ JS;
      */
     protected function findElementXpaths($xpath)
     {
-        $this->waitForDom();
+        $this->page->waitForLoad();
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
     function getPathTo(element) {
@@ -953,6 +954,7 @@ JS;
 
     protected function getElementProperty($xpath, $property)
     {
+        $this->page->waitForLoad();
         return $this->runScriptOnXpathElement($xpath, 'element.' . $property);
     }
 
@@ -1063,11 +1065,12 @@ JS;
      * @param $script
      * @param null $type
      * @param bool $has_return
+     * @param bool $retry
      * @return array
      * @throws ElementNotFoundException
      * @throws \Exception
      */
-    protected function runScriptOnXpathElement($xpath, $script, $type = null, $has_return = false)
+    protected function runScriptOnXpathElement($xpath, $script, $type = null, $has_return = false, $retry = true)
     {
         $expression = $this->getXpathExpression($xpath);
         $expression .= <<<JS
@@ -1081,6 +1084,11 @@ JS;
             $result = $this->evaluateScript($expression, $has_return);
         } catch (\Exception $exception) {
             if (strpos($exception->getMessage(), 'Element not found') !== false) {
+                if ($retry) {
+                    # The DOM might not have been ready when we originally sent the command
+                    # Since evaluateScript is synchronous and it waits for page load, the DOM should have loaded now.
+                    return $this->runScriptOnXpathElement($xpath, $script, $type, $has_return, false);
+                }
                 throw new ElementNotFoundException($this, $type, 'xpath', $xpath);
             }
             throw $exception;
@@ -1130,11 +1138,6 @@ JS;
         }
 
         throw new DriverException('No such window ' . $window_id);
-    }
-
-    protected function waitForDom()
-    {
-        $this->page->waitForLoad();
     }
 
     /**

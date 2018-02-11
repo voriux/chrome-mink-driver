@@ -116,7 +116,7 @@ class ChromePage
 
     public function waitForLoad()
     {
-        while (!$this->page_ready) {
+        while (true) {
             $this->connection->tick();
             if ($this->page_ready) {
                 break;
@@ -145,7 +145,6 @@ class ChromePage
      */
     public function runScript($script)
     {
-        # TODO: Investigate Runtime.enable with Runtime.executionContextDestroyed/executionContextCreated instead of waiting for load
         $this->waitForLoad();
         return $this->connection->send('Runtime.evaluate', ['expression' => $script]);
     }
@@ -368,7 +367,6 @@ class ChromePage
             case 'Page.frameNavigated':
                 $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
                 unset($this->frames_pending_navigation[$frame_id]);
-                $this->page_ready = false;
                 break;
             case 'Page.loadEventFired':
                 $this->page_ready = false;
@@ -376,6 +374,8 @@ class ChromePage
             case 'Page.frameStartedLoading':
             case 'Page.frameScheduledNavigation':
                 $this->page_ready = false;
+                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
+                $this->frames_pending_navigation[$frame_id] = true;
                 break;
             case 'Page.frameStoppedLoading':
                 $this->page_ready = true;
@@ -427,6 +427,7 @@ class ChromePage
             $parameters['clickCount'] = $click_count;
         }
         $this->connection->send('Input.dispatchMouseEvent', $parameters);
+        $this->waitForLoad();
     }
 
     public function setVisibleSize($width, $height)
