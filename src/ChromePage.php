@@ -282,6 +282,7 @@ class ChromePage
 
     public function attachFile($name, $path, $include_iframes) : bool
     {
+        $this->connection->asyncSend('DOM.enable');
         $parameters = [
             'pierce' => $include_iframes,
         ];
