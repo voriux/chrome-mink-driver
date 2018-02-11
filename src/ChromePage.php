@@ -116,7 +116,7 @@ class ChromePage
 
     public function waitForLoad()
     {
-        while (true) {
+        while (!$this->page_ready) {
             $this->connection->tick();
             if ($this->page_ready) {
                 break;
@@ -379,6 +379,8 @@ class ChromePage
                 $this->frames_pending_navigation[$frame_id] = true;
                 break;
             case 'Page.frameStoppedLoading':
+                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
+                unset($this->frames_pending_navigation[$frame_id]);
                 $this->page_ready = true;
                 break;
             case 'Page.javascriptDialogOpening':
