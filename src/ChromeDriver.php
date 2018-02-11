@@ -1134,7 +1134,6 @@ JS;
 
     protected function waitForDom()
     {
-        $this->wait(3000, 'document.readyState == "complete"');
         $this->page->waitForLoad();
     }
 
