@@ -19,14 +19,16 @@ class ChromePage
     private $browser_version;
     private $base_url;
     private $frames_pending_navigation = [];
+    private $target_id;
 
-    public function __construct(DevToolsConnection $connection, $browser_version, $base_url)
+    public function __construct(DevToolsConnection $connection, $browser_version, $base_url, $target_id)
     {
         $this->connection = $connection;
         $this->browser_version = $browser_version;
         $this->base_url = $base_url;
 
         $connection->on('event', [$this, 'handleEvent']);
+        $this->target_id = $target_id;
     }
 
     public function connect()
@@ -35,6 +37,12 @@ class ChromePage
         $this->connection->asyncSend('Page.enable');
         $this->connection->asyncSend('Network.enable');
         $this->connection->asyncSend('Animation.setPlaybackRate', ['playbackRate' => 100000]);
+    }
+
+    public function close()
+    {
+        $this->connection->asyncSend('Target.closeTarget', ['targetId' => $this->target_id]);
+        $this->connection->close();
     }
 
     public function reset()

@@ -50,15 +50,16 @@ class ChromeDriver extends CoreDriver
         $this->api_url = $api_url;
         $this->ws_url = str_replace('http', 'ws', $api_url);
         $this->base_url = $base_url;
-        $connection = new DevToolsConnection($this->ws_url . '/devtools/browser');
-        $this->browser = new ChromeBrowser($connection);
-        $this->browser->setHttpClient($http_client);
-        $this->browser->setHttpUri($api_url);
         $this->options = $options;
     }
 
     public function start()
     {
+        $connection = new DevToolsConnection($this->ws_url . '/devtools/browser');
+        $connection->connect();
+        $this->browser = new ChromeBrowser($connection);
+        $this->browser->setHttpClient($this->http_client);
+        $this->browser->setHttpUri($this->api_url);
         $this->main_window = $this->browser->start();
         $this->connectToWindow($this->main_window);
         $this->is_started = true;
@@ -110,6 +111,8 @@ class ChromeDriver extends CoreDriver
             }
             $this->http_client->get($this->api_url . '/json/close/' . $window_id);
         }
+        $this->page->close();
+        $this->current_window = null;
         $this->browser->close();
         $this->is_started = false;
     }
@@ -1129,7 +1132,7 @@ JS;
         foreach ($windows as $window) {
             if ($window['id'] == $window_id) {
                 $connection = new DevToolsConnection($window['webSocketDebuggerUrl']);
-                $this->page = new ChromePage($connection, $this->browser->getVersion(), $this->base_url);
+                $this->page = new ChromePage($connection, $this->browser->getVersion(), $this->base_url, $window_id);
                 $this->page->connect();
                 $this->current_window = $window_id;
                 $this->document = 'document';

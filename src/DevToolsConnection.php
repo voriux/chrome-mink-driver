@@ -2,6 +2,7 @@
 
 namespace DMore\ChromeDriver;
 
+use Behat\Mink\Exception\DriverException;
 use Evenement\EventEmitterInterface;
 use Evenement\EventEmitterTrait;
 use Ratchet\Client\Connector;
@@ -20,6 +21,7 @@ class DevToolsConnection implements EventEmitterInterface
     private $url;
     /** @var bool */
     private $connected = false;
+    private $connecting = false;
     /** @var WebSocket */
     private $socket;
     protected $response_queue = [];
@@ -33,6 +35,7 @@ class DevToolsConnection implements EventEmitterInterface
 
     public function connect($url = null)
     {
+        $this->connecting = true;
         $url = $url == null ? $this->url : $url;
         $this->loop = Factory::create();
 
@@ -43,15 +46,15 @@ class DevToolsConnection implements EventEmitterInterface
             $this->socket = $socket;
 
             $socket->on('message', [$this, 'receive']);
-
-            $socket->on('close', function () {
-                $this->connected = false;
-            });
+            $socket->on('close', [$this, 'close']);
         });
     }
 
     public function close()
     {
+        $this->connecting = false;
+        $this->connected = false;
+        $this->loop->stop();
         $this->socket->close();
     }
 
@@ -71,12 +74,16 @@ class DevToolsConnection implements EventEmitterInterface
 
     public function asyncSend($command, array $parameters = []) : int
     {
-        while (!$this->connected) {
+        while ($this->connecting) {
             $this->loop->tick();
             if ($this->connected) {
                 break;
             }
             usleep(1000);
+        }
+
+        if (!$this->connected) {
+            throw new DriverException('No connection');
         }
 
         $payload['id'] = $this->command_id++;

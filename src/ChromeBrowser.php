@@ -105,6 +105,8 @@ class ChromeBrowser
                 throw new DriverException('Unable to close browser context');
             }
         }
+
+        $this->connection->close();
     }
 
     /**
