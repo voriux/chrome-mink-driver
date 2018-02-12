@@ -54,19 +54,14 @@ class ChromePage
 
     public function visit($url)
     {
-        while (!$this->page_ready) {
-            $this->connection->tick();
-
-            if ($this->page_ready) {
-                break;
-            }
-
-            usleep(10000);
-        }
-
+        $this->connection->asyncSend('Page.stopLoading');
         $this->response = null;
         $this->page_ready = false;
-        $this->connection->send('Page.navigate', ['url' => $url]);
+        $this->frames_pending_navigation = [];
+        $this->pending_requests = [];
+        $result = $this->connection->send('Page.navigate', ['url' => $url]);
+        $frame_id = $result['frameId'] ?? $result['frame']['id'];
+        $this->frames_pending_navigation[$frame_id] = $result;
     }
 
     public function reload()
@@ -384,19 +379,11 @@ class ChromePage
                 unset($this->frames_pending_navigation[$frame_id]);
                 $this->updatePageStatus();
                 break;
-            case 'Page.loadEventFired':
-                $this->page_ready = false;
-                break;
             case 'Page.frameStartedLoading':
             case 'Page.frameScheduledNavigation':
                 $this->page_ready = false;
                 $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
                 $this->frames_pending_navigation[$frame_id] = true;
-                break;
-            case 'Page.frameStoppedLoading':
-                $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
-                unset($this->frames_pending_navigation[$frame_id]);
-                $this->updatePageStatus();
                 break;
             case 'Page.javascriptDialogOpening':
                 $this->has_javascript_dialog = true;
