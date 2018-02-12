@@ -46,11 +46,16 @@ class ChromePage
 
     public function visit($url)
     {
-        if (count($this->pending_requests) > 0 || count($this->frames_pending_navigation) > 0) {
-            $this->connection->waitFor(function () {
-                return count($this->pending_requests) == 0 && count($this->frames_pending_navigation) == 0;
-            });
+        while (!$this->page_ready) {
+            $this->connection->tick();
+
+            if ($this->page_ready) {
+                break;
+            }
+
+            usleep(10000);
         }
+
         $this->response = null;
         $this->page_ready = false;
         $this->connection->send('Page.navigate', ['url' => $url]);
@@ -98,7 +103,7 @@ class ChromePage
         if (null === $this->response) {
             $parameters = ['expression' => 'document.readyState == "complete"'];
             $domReady = $this->connection->send('Runtime.evaluate', $parameters)['result']['value'];
-            if (count($this->pending_requests) == 0 && $domReady) {
+            if (!$this->page_ready && $domReady) {
                 if (null === $this->response) {
                     $this->response = [
                         'status' => 200,
@@ -108,9 +113,7 @@ class ChromePage
                 }
             }
 
-            $this->connection->waitFor(function () {
-                return null !== $this->response && count($this->pending_requests) == 0;
-            });
+            $this->waitForLoad();
         }
     }
 
@@ -352,22 +355,26 @@ class ChromePage
             case 'Network.requestWillBeSent':
                 if ($data['params']['type'] == 'Document') {
                     $this->pending_requests[$data['params']['requestId']] = true;
+                    $this->page_ready = false;
                 }
                 break;
             case 'Network.responseReceived':
                 if ($data['params']['type'] == 'Document') {
                     unset($this->pending_requests[$data['params']['requestId']]);
                     $this->response = $data['params']['response'];
+                    $this->updatePageStatus();
                 }
                 break;
             case 'Network.loadingFailed':
                 if ($data['params']['canceled']) {
                     unset($this->pending_requests[$data['params']['requestId']]);
+                    $this->updatePageStatus();
                 }
                 break;
             case 'Page.frameNavigated':
                 $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
                 unset($this->frames_pending_navigation[$frame_id]);
+                $this->updatePageStatus();
                 break;
             case 'Page.loadEventFired':
                 $this->page_ready = false;
@@ -381,7 +388,7 @@ class ChromePage
             case 'Page.frameStoppedLoading':
                 $frame_id = $data['params']['frameId'] ?? $data['params']['frame']['id'];
                 unset($this->frames_pending_navigation[$frame_id]);
-                $this->page_ready = true;
+                $this->updatePageStatus();
                 break;
             case 'Page.javascriptDialogOpening':
                 $this->has_javascript_dialog = true;
@@ -461,5 +468,12 @@ class ChromePage
     public function printToPdf($options)
     {
         return $this->connection->send('Page.printToPDF', $options);
+    }
+
+    private function updatePageStatus()
+    {
+        if (empty($this->pending_requests) && empty($this->frames_pending_navigation)) {
+            $this->page_ready = true;
+        }
     }
 }
