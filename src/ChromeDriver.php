@@ -1385,10 +1385,6 @@ JS;
      */
     public function captureScreenshot($filename, $options = [])
     {
-        if (false === $this->browser->isHeadless()) {
-            throw new \RuntimeException('Page.captureScreenshot is only available in headless mode.');
-        }
-
         $response = $this->page->send('Page.captureScreenshot', $options);
 
         if (false === array_key_exists('data', $response) || false === $imageData = base64_decode($response['data'])) {
