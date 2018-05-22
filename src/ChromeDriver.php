@@ -754,8 +754,10 @@ JS;
     var initialY = Math.ceil(rect.top);
     var maxX = Math.floor(rect.left + rect.width);
     var maxY = Math.floor(rect.top + rect.height);
-    for (x = initialX; x <= maxX; x++) {
-        for (y = initialY; y <= maxY; y++) {
+    var midX = Math.floor((initialX + maxX) / 2);
+    var midY = Math.floor((initialY + maxY) / 2);
+    for (x = midX; x >= initialX; x--) {
+        for (y = midY; y >= initialY; y--) {
             var pointElement = document.elementFromPoint(x, y);
             if (element === pointElement || element.contains(pointElement)) {
                 return [x, y];
@@ -791,9 +793,9 @@ JS;
                     'clickCount' => 1,
                 ];
                 $this->page->send('Input.dispatchMouseEvent', $parameters);
-                usleep(5000);
-                $this->waitForDom();
             }
+            usleep(50000);
+            $this->waitForDom();
         }
     }
 
